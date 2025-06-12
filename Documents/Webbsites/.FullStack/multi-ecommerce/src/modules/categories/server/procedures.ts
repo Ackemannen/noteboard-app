@@ -20,7 +20,6 @@ export const categoriesRouter = createTRPCRouter({
             subcategories: (doc.subcategories?.docs ?? []).map((doc) => ({
               // Because of depth: 1, we are confident doc is a Category type
               ...(doc as Category),
-              subcategories: undefined,
             })),
           }));
 
