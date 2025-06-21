@@ -140,6 +140,32 @@ const categories = [
 const seed = async () => {
     const payload = await getPayload({ config });
 
+    // Create admin tenant
+    const adminTenant = await payload.create({
+        collection: "tenants",
+        data: {
+            name: "admin",
+            slug: "admin",
+            stripeAccountId: "admin", // Placeholder for Stripe account ID
+        },
+    });
+
+    // Create admin user
+    await payload.create({
+      collection: "users",
+      data: {
+        email: "admin@demo.com",
+        username: "admin",
+        password: "demo",
+        roles: ["super-admin"],
+        tenants: [
+          {
+            tenant: adminTenant.id,
+          },
+        ],
+      },
+    })
+
     for (const category of categories) {
         const parentCategory = await payload.create({
             collection: "categories",
