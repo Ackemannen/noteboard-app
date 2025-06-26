@@ -27,7 +27,9 @@ const Layout = async ({ children, params }: LayoutProps) => {
         </Suspense>
       </HydrationBoundary>
       <div className="flex-1">
-        <div className="max-w-(--breakpoint-xl) max-auto">{children}</div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 max-auto">
+          {children}
+        </div>
       </div>
       <Footer />
     </div>
