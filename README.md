@@ -1,8 +1,9 @@
-🧷 Digital Cork Board
+# 🧷 Digital Cork Board
+
 A beautiful and interactive digital cork board built with React, TypeScript, and Tailwind CSS. Create, edit, and organize sticky notes with a realistic cork board experience — just like the real thing, but better!
 
 
-✨ Features
+## ✨ Features
 📝 Interactive Sticky Notes – Create, edit, and delete notes instantly
 
 🎨 Colorful Notes – Choose from 5 vibrant colors: Yellow, Pink, Blue, Green, Orange
@@ -19,40 +20,49 @@ A beautiful and interactive digital cork board built with React, TypeScript, and
 
 🌀 Random Rotation – Notes appear with slight rotation for that organic, realistic feel
 
-🚀 Getting Started
-Prerequisites
-Node.js (v18 or higher)
+## 🚀 Installation
 
-npm or yarn
+### Prerequisites
 
-Installation
-bash
-Kopiera
-Redigera
-# Clone the repository
-git clone https://github.com/your-username/digital-cork-board.git
-cd digital-cork-board
+Make sure you have the following installed:
 
-# Install dependencies
-npm install
-# or
-yarn install
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- npm or yarn
 
-# Start development server
-npm run dev
-# or
-yarn dev
-Then open your browser and navigate to:
-http://localhost:5173
+### 🛠️ Setup
 
-📦 Available Scripts
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/digital-cork-board.git
+   cd digital-cork-board
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+    # or
+    yarn install
+   ```
+
+3. **Start the developement server**
+   ```bash
+   npm run dev
+    # or
+    yarn dev
+    ```
+
+4. **Open in browser** 
+  Then open your browser and navigate to:
+  http://localhost:5173
+
+## 📦 Available Scripts
 Script	Description
 npm run dev	Start development server
 npm run build	Build app for production
 npm run preview	Preview production build
 npm run lint	Run ESLint to check code quality
 
-🎮 How to Use
+## 🎮 How to Use
 Create a Note – Click anywhere on the board
 
 Edit a Note – Click an existing note to edit title, content, or color
@@ -63,7 +73,7 @@ Delete Notes – Open a note and click the 🗑️ delete button
 
 Change Color – Select from 5 preset colors while editing or creating a note
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 Tool	Purpose
 React 19.1.0	UI framework
 TypeScript 5.8.3	Static typing
@@ -76,10 +86,8 @@ React Query	State management and caching
 React Router DOM	Routing
 Sonner	Toast notifications
 
-📁 Project Structure
-bash
-Kopiera
-Redigera
+## 📁 Project Structure
+```plaintext
 src/
 ├── components/
 │   ├── StickyNote.tsx         # Individual note component
@@ -88,29 +96,31 @@ src/
 ├── assets/                    # Cork board background, icons, etc.
 ├── App.tsx
 └── main.tsx
-🧩 Key Components
-🗒️ StickyNote
+```
+
+## 🧩 Key Components
+### 🗒️ StickyNote
 Renders individual sticky notes with animations
 
 Implements drag-and-drop and random rotation
 
 Uses Tailwind classes for styling
 
-🪟 NoteModal
+### 🪟 NoteModal
 Modal for creating and editing notes
 
 Color selection with preview
 
 Includes delete functionality and validation
 
-🧲 useDrag Hook
+### 🧲 useDrag Hook
 Smooth drag behavior using requestAnimationFrame
 
 Prevents click events while dragging
 
 Cleans up event listeners to avoid memory leaks
 
-🎨 Customization
+### 🎨 Customization
 Add New Note Colors
 Update the colors array in NoteModal.tsx
 
