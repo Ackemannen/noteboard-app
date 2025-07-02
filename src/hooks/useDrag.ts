@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface Position {
   x: number;
@@ -7,94 +7,69 @@ interface Position {
 
 interface UseDragProps {
   initialPosition: Position;
-  onDrag?: (position: Position) => void;
   onDragEnd?: (position: Position) => void;
+  disabled?: boolean;
+  zoom?: number;
 }
 
-export const useDrag = ({ initialPosition, onDrag, onDragEnd }: UseDragProps) => {
+export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1 }: UseDragProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const [hasDragged, setHasDragged] = useState(false);
-  const dragStartPos = useRef<Position>({ x: 0, y: 0 });
-  const elementStartPos = useRef<Position>(initialPosition);
-  const animationFrameRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(0);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const initialPos = useRef(initialPosition);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (disabled) return;
+    
     e.preventDefault();
     e.stopPropagation();
     
     setIsDragging(true);
     setHasDragged(false);
+    
     dragStartPos.current = { x: e.clientX, y: e.clientY };
-    elementStartPos.current = position;
+    initialPos.current = position;
 
     const handleMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
+      if (disabled) return;
       
-      // Mark that we've actually dragged (moved the mouse while dragging)
-      const deltaX = e.clientX - dragStartPos.current.x;
-      const deltaY = e.clientY - dragStartPos.current.y;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const deltaX = (e.clientX - dragStartPos.current.x) / zoom;
+      const deltaY = (e.clientY - dragStartPos.current.y) / zoom;
       
-      if (distance > 5) { // Only consider it a drag if moved more than 5px
+      // Mark as dragged if moved more than 5 pixels
+      if (!hasDragged && (Math.abs(deltaX * zoom) > 5 || Math.abs(deltaY * zoom) > 5)) {
         setHasDragged(true);
       }
       
-      // Throttle updates using requestAnimationFrame for smooth performance
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      animationFrameRef.current = requestAnimationFrame(() => {
-        const now = performance.now();
-        
-        // Additional throttling: update at most every 8ms (120fps equivalent)
-        if (now - lastUpdateRef.current < 8) return;
-        lastUpdateRef.current = now;
-
-        const newPosition = {
-          x: elementStartPos.current.x + deltaX,
-          y: elementStartPos.current.y + deltaY
-        };
-        
-        setPosition(newPosition);
-        onDrag?.(newPosition);
+      setPosition({
+        x: initialPos.current.x + deltaX,
+        y: initialPos.current.y + deltaY
       });
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
-      e.preventDefault();
+    const handleMouseUp = () => {
       setIsDragging(false);
       
-      // Cancel any pending animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
+      if (onDragEnd && !disabled) {
+        onDragEnd(position);
       }
-
-      // Get final position for onDragEnd callback
-      const deltaX = e.clientX - dragStartPos.current.x;
-      const deltaY = e.clientY - dragStartPos.current.y;
-      const finalPosition = {
-        x: elementStartPos.current.x + deltaX,
-        y: elementStartPos.current.y + deltaY
-      };
-      
-      setPosition(finalPosition);
-      onDragEnd?.(finalPosition);
       
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    // Use passive: false to allow preventDefault
-    document.addEventListener('mousemove', handleMouseMove, { passive: false });
-    document.addEventListener('mouseup', handleMouseUp, { passive: false });
-  }, [position, onDrag, onDragEnd]);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [position, onDragEnd, hasDragged, disabled, zoom]);
+
+  // Update position when initialPosition changes (for external updates)
+  useEffect(() => {
+    setPosition(initialPosition);
+  }, [initialPosition.x, initialPosition.y]);
 
   return {
-    isDragging,
+    isDragging: isDragging && !disabled,
     position,
     hasDragged,
     handleMouseDown

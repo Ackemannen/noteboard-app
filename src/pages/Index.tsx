@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from "react";
-import StickyNote from "../components/StickyNote";
+import React, { useState, useEffect, useRef } from "react";
+import CorkBoard from "../components/CorkBoard";
 import NoteModal from "../components/NoteModal";
-import corkboard from "../assets/background.png";
+import ZoomControls from "../components/ZoomControls";
+import InfoWindow from "../components/InfoWindow";
+import { useZoom } from "../hooks/useZoom";
+import { useSelection } from "../hooks/useSelection";
+import { useSelectedNotesMovement } from "../hooks/useSelectedNotesMovement";
+import corkboardImg from "../assets/corkboard.png";
 
 interface Note {
   id: string;
@@ -18,81 +23,174 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  const {
+    zoom,
+    panOffset,
+    handleWheel,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+  } = useZoom();
+  const {
+    selectedNoteIds,
+    isSelecting,
+    selectionPath,
+    handleSelectionStart,
+    handleSelectionMove,
+    handleSelectionEnd,
+    clearSelection,
+  } = useSelection({ notes, zoom, panOffset });
+
+  const {
+    isDraggingSelected,
+    hasDraggedGroup,
+    startDraggingSelected,
+    handleSelectedNotesMove,
+    stopDraggingSelected,
+  } = useSelectedNotesMovement({
+    selectedNoteIds,
+    notes,
+    zoom,
+    onNotesMove: (updates) => {
+      setNotes((prevNotes) =>
+        prevNotes.map((note) => {
+          const update = updates.find((u) => u.id === note.id);
+          return update ? { ...note, x: update.x, y: update.y } : note;
+        })
+      );
+    },
+  });
 
   // Load notes from localStorage on component mount
   useEffect(() => {
-    try {
-      // Check if localStorage is available
-      if (typeof window !== "undefined" && window.localStorage) {
-        const savedNotes = localStorage.getItem("corkboard-notes");
-        if (savedNotes) {
-          const parsedNotes = JSON.parse(savedNotes);
-          console.log("Loaded notes from localStorage:", parsedNotes);
-          setNotes(parsedNotes);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading notes from localStorage:", error);
-      // Only clear if it's a JSON parsing error, not other errors
-      if (error instanceof SyntaxError) {
-        try {
-          localStorage.removeItem("corkboard-notes");
-          console.log("Cleared corrupted localStorage data");
-        } catch (clearError) {
-          console.error("Error clearing localStorage:", clearError);
-        }
-      }
+    const savedNotes = localStorage.getItem("corkboard-notes");
+    if (savedNotes) {
+      setNotes(JSON.parse(savedNotes));
     }
   }, []);
 
   // Save notes to localStorage whenever notes change
   useEffect(() => {
-    // Don't save if notes array is empty and we haven't loaded anything yet
-    if (notes.length === 0) return;
-
-    try {
-      // Check if localStorage is available
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("corkboard-notes", JSON.stringify(notes));
-        console.log("Saved notes to localStorage:", notes);
-      }
-    } catch (error) {
-      console.error("Error saving notes to localStorage:", error);
-      // If it's a quota exceeded error, try to clear old data
-      if (error instanceof Error && error.name === "QuotaExceededError") {
-        try {
-          localStorage.clear();
-          localStorage.setItem("corkboard-notes", JSON.stringify(notes));
-          console.log("Cleared localStorage and saved notes successfully");
-        } catch (retryError) {
-          console.error(
-            "Failed to save notes even after clearing localStorage:",
-            retryError
-          );
-        }
-      }
-    }
+    localStorage.setItem("corkboard-notes", JSON.stringify(notes));
   }, [notes]);
 
+  // Set up event listeners for zoom and selection
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+
+    const handleMouseMoveGroup = (e: MouseEvent) => {
+      handleMouseMove(e);
+      handleSelectionMove(e);
+      handleSelectedNotesMove(e);
+    };
+
+    const handleMouseUpGroup = (e: MouseEvent) => {
+      handleMouseUp();
+      handleSelectionEnd();
+      stopDraggingSelected();
+    };
+
+    board.addEventListener("wheel", handleWheel, { passive: false });
+    document.addEventListener("mousemove", handleMouseMoveGroup);
+    document.addEventListener("mouseup", handleMouseUpGroup);
+
+    return () => {
+      board.removeEventListener("wheel", handleWheel);
+      document.removeEventListener("mousemove", handleMouseMoveGroup);
+      document.removeEventListener("mouseup", handleMouseUpGroup);
+    };
+  }, [
+    handleWheel,
+    handleMouseMove,
+    handleMouseUp,
+    handleSelectionMove,
+    handleSelectionEnd,
+    handleSelectedNotesMove,
+    stopDraggingSelected,
+  ]);
+
   const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't create new note if clicking on existing note
-    if ((e.target as HTMLElement).closest(".sticky-note")) {
+    const target = e.target as HTMLElement;
+
+    // Don't create new note if clicking on existing note or if we're selecting
+    if (target.closest(".sticky-note") || isSelecting) {
+      return;
+    }
+
+    // Clear selection if clicking on empty space (but not during shift+click)
+    if (selectedNoteIds.length > 0 && !e.shiftKey) {
+      clearSelection();
+      return;
+    }
+
+    // Don't create note if shift is held (selection mode)
+    if (e.shiftKey) {
       return;
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - panOffset.x) / zoom;
+    const y = (e.clientY - rect.top - panOffset.y) / zoom;
 
-    setModalPosition({ x, y });
+    setModalPosition({ x: x * zoom + panOffset.x, y: y * zoom + panOffset.y });
     setEditingNote(null);
     setIsModalOpen(true);
   };
 
+  const handleBoardMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log("Board mouse down triggered");
+    const target = e.target as HTMLElement;
+    const boardElement = e.currentTarget;
+    const clickedNoteElement = target.closest(".sticky-note");
+    const noteId = clickedNoteElement?.getAttribute("data-note-id");
+    console.log("Clicked note ID:", noteId, "Selected notes:", selectedNoteIds);
+
+    // If shift is held, start selection (regardless of what we're clicking on)
+    if (e.shiftKey) {
+      e.preventDefault();
+      handleSelectionStart(e, boardElement);
+      return;
+    }
+
+    // If clicking on a selected note, start group movement
+    if (
+      noteId &&
+      selectedNoteIds.includes(noteId) &&
+      selectedNoteIds.length > 1
+    ) {
+      console.log("Starting group drag for selected notes");
+      e.preventDefault();
+      startDraggingSelected(e);
+      return;
+    }
+
+    // If clicking on a note but not selected, clear selection first
+    if (noteId && selectedNoteIds.length > 0) {
+      clearSelection();
+    }
+
+    // Handle panning (middle click or ctrl+click)
+    if (e.button === 1 || e.ctrlKey) {
+      handleMouseDown(e);
+    }
+  };
+
   const handleNoteClick = (note: Note) => {
-    setEditingNote(note);
-    setModalPosition({ x: note.x, y: note.y });
-    setIsModalOpen(true);
+    // Only open modal if not dragging selected notes
+    if (!isDraggingSelected) {
+      setEditingNote(note);
+      setModalPosition({
+        x: note.x * zoom + panOffset.x,
+        y: note.y * zoom + panOffset.y,
+      });
+      setIsModalOpen(true);
+    }
   };
 
   const handleNotePositionChange = (noteId: string, x: number, y: number) => {
@@ -118,8 +216,8 @@ const Index = () => {
       const newNote: Note = {
         id: Date.now().toString(),
         ...noteData,
-        x: modalPosition.x,
-        y: modalPosition.y,
+        x: (modalPosition.x - panOffset.x) / zoom,
+        y: (modalPosition.y - panOffset.y) / zoom,
         rotation: Math.random() * 10 - 5, // Random rotation between -5 and 5 degrees
       };
       setNotes([...notes, newNote]);
@@ -135,41 +233,45 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <img
-        src={corkboard}
-        alt="Corkboard"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+    <div className="min-h-screen bg-cork bg-cover bg-center relative overflow-hidden">
       {/* Cork board overlay for better texture */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-100/20 to-amber-800/20 pointer-events-none"></div>
+      <img
+        src={corkboardImg}
+        alt="Corkboard"
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        draggable="false"
+      />
+
+      {/* Info Window - Fixed position */}
+      <InfoWindow
+        selectedCount={selectedNoteIds.length}
+        totalNotes={notes.length}
+      />
 
       {/* Main cork board area */}
-      <div
-        className="relative w-full h-screen cursor-crosshair"
-        onClick={handleBoardClick}
-      >
-        {/* Instructions */}
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-sm z-10">
-          <h2 className="font-semibold text-amber-900 mb-2">
-            Digital Cork Board
-          </h2>
-          <p className="text-sm text-amber-800">
-            Click anywhere on the board to create a sticky note. Click on
-            existing notes to edit them, or drag them to move them around.
-          </p>
-        </div>
-
-        {/* Render all sticky notes */}
-        {notes.map((note) => (
-          <StickyNote
-            key={note.id}
-            note={note}
-            onClick={() => handleNoteClick(note)}
-            onPositionChange={handleNotePositionChange}
-          />
-        ))}
+      <div ref={boardRef}>
+        <CorkBoard
+          notes={notes}
+          selectedNoteIds={selectedNoteIds}
+          isSelecting={isSelecting}
+          selectionPath={selectionPath}
+          zoom={zoom}
+          panOffset={panOffset}
+          hasDraggedGroup={hasDraggedGroup}
+          onBoardClick={handleBoardClick}
+          onBoardMouseDown={handleBoardMouseDown}
+          onNoteClick={handleNoteClick}
+          onNotePositionChange={handleNotePositionChange}
+        />
       </div>
+
+      {/* Zoom Controls */}
+      <ZoomControls
+        zoom={zoom}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onReset={resetZoom}
+      />
 
       {/* Note Modal */}
       <NoteModal

@@ -15,18 +15,29 @@ interface StickyNoteProps {
   note: Note;
   onClick: () => void;
   onPositionChange: (id: string, x: number, y: number) => void;
+  isSelected?: boolean;
+  hasDraggedGroup?: boolean;
+  zoom: number;
+  "data-note-id"?: string;
 }
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
   onClick,
   onPositionChange,
+  isSelected = false,
+  hasDraggedGroup = false,
+  zoom,
+  "data-note-id": dataNodeId,
 }) => {
   const { isDragging, position, hasDragged, handleMouseDown } = useDrag({
     initialPosition: { x: note.x, y: note.y },
     onDragEnd: (newPosition) => {
       onPositionChange(note.id, newPosition.x, newPosition.y);
     },
+    // Disable individual dragging when note is selected (part of a group)
+    disabled: isSelected,
+    zoom, // Pass zoom to the hook for proper calculations
   });
 
   const getColorClasses = (color: string) => {
@@ -46,11 +57,26 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   };
 
-  const handleNoteClick = () => {
-    // Only trigger onClick if we haven't just finished dragging
-    if (!hasDragged) {
+  const handleNoteClick = (e: React.MouseEvent) => {
+    // Don't trigger onClick if we just finished dragging, if shift is held, or if group dragging occurred
+    if (!hasDragged && !e.shiftKey && !hasDraggedGroup) {
       onClick();
     }
+  };
+
+  const handleNoteMouseDown = (e: React.MouseEvent) => {
+    // Don't start individual drag if shift is held (selection mode)
+    if (e.shiftKey) {
+      return;
+    }
+
+    // If this note is selected, don't start individual drag - let the parent handle group drag
+    if (isSelected) {
+      return;
+    }
+
+    // Only start individual drag if this note is not selected
+    handleMouseDown(e);
   };
 
   return (
@@ -61,31 +87,40 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         isDragging
           ? "cursor-grabbing z-30 transition-none"
           : "cursor-grab transition-all duration-200 ease-out hover:scale-105 hover:z-20"
+      } ${
+        isSelected ? "ring-4 ring-blue-400 ring-opacity-50 scale-105 z-20" : ""
       }`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: `translate(-50%, -50%) rotate(${note.rotation}deg) ${
-          isDragging ? "scale(1.05)" : ""
+        left: `${position.x * zoom}px`,
+        top: `${position.y * zoom}px`,
+        transform: `translate(-50%, -50%) rotate(${
+          note.rotation
+        }deg) scale(${zoom}) ${
+          isDragging ? "scale(1.05)" : isSelected ? "scale(1.05)" : ""
         }`,
         boxShadow: isDragging
           ? "0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(0, 0, 0, 0.2)"
+          : isSelected
+          ? "0 16px 35px rgba(59, 130, 246, 0.4), 0 8px 18px rgba(59, 130, 246, 0.3)"
           : "0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)",
       }}
-      onMouseDown={handleMouseDown}
+      data-note-id={note.id}
+      data-x={position.x}
+      data-y={position.y}
+      onMouseDown={handleNoteMouseDown}
       onClick={handleNoteClick}
       onMouseEnter={(e) => {
-        if (!isDragging) {
+        if (!isDragging && !isSelected) {
           const element = e.currentTarget;
           element.style.transform = `translate(-50%, -50%) rotate(${
             note.rotation + 2
-          }deg) scale(1.02)`;
+          }deg) scale(${zoom * 1.02})`;
         }
       }}
       onMouseLeave={(e) => {
-        if (!isDragging) {
+        if (!isDragging && !isSelected) {
           const element = e.currentTarget;
-          element.style.transform = `translate(-50%, -50%) rotate(${note.rotation}deg) scale(1)`;
+          element.style.transform = `translate(-50%, -50%) rotate(${note.rotation}deg) scale(${zoom})`;
         }
       }}
     >
