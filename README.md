@@ -1,69 +1,133 @@
-# React + TypeScript + Vite
+# 🧷 Digital Cork Board
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A beautiful and interactive digital cork board built with React, TypeScript, and Tailwind CSS. Create, edit, and organize sticky notes with a realistic cork board experience — just like the real thing, but better!
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
+📝 Interactive Sticky Notes – Create, edit, and delete notes instantly
 
-## Expanding the ESLint configuration
+🎨 Colorful Notes – Choose from 5 vibrant colors: Yellow, Pink, Blue, Green, Orange
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+🖱️ Drag & Drop – Smooth repositioning with mouse or touch support
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+💾 Persistent Storage – Notes are saved automatically via localStorage
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+🧱 Realistic Design – Authentic cork board look with sticky note texture
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+📱 Responsive Layout – Works great on both desktop and mobile devices
+
+⚡ Smooth Animations – Includes subtle hover effects and transitions
+
+🌀 Random Rotation – Notes appear with slight rotation for that organic, realistic feel
+
+## 🚀 Installation
+
+### Prerequisites
+
+Make sure you have the following installed:
+
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- npm or yarn
+
+### 🛠️ Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/digital-cork-board.git
+   cd digital-cork-board
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+    # or
+    yarn install
+   ```
+
+3. **Start the developement server**
+   ```bash
+   npm run dev
+    # or
+    yarn dev
+    ```
+
+4. **Open in browser** 
+  Then open your browser and navigate to:
+  http://localhost:5173
+
+## 📦 Available Scripts
+Script	Description
+npm run dev	Start development server
+npm run build	Build app for production
+npm run preview	Preview production build
+npm run lint	Run ESLint to check code quality
+
+## 🎮 How to Use
+Create a Note – Click anywhere on the board
+
+Edit a Note – Click an existing note to edit title, content, or color
+
+Move Notes – Drag and drop notes to rearrange them freely
+
+Delete Notes – Open a note and click the 🗑️ delete button
+
+Change Color – Select from 5 preset colors while editing or creating a note
+
+## 🛠️ Tech Stack
+Tool	Purpose
+React 19.1.0	UI framework
+TypeScript 5.8.3	Static typing
+Vite 7.0.0	Build and development server
+Tailwind CSS 4.1.11	Utility-first CSS styling
+Radix UI	Accessible UI primitives
+Lucide React	Icon library
+React Hook Form	Form management
+React Query	State management and caching
+React Router DOM	Routing
+Sonner	Toast notifications
+
+## 📁 Project Structure
+```plaintext
+src/
+├── components/
+│   ├── StickyNote.tsx         # Individual note component
+│   ├── NoteModal.tsx          # Modal for editing/creating notes
+│   └── hooks/useDrag.ts       # Custom hook for drag-and-drop
+├── assets/                    # Cork board background, icons, etc.
+├── App.tsx
+└── main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🧩 Key Components
+### 🗒️ StickyNote
+Renders individual sticky notes with animations
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Implements drag-and-drop and random rotation
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Uses Tailwind classes for styling
+
+### 🪟 NoteModal
+Modal for creating and editing notes
+
+Color selection with preview
+
+Includes delete functionality and validation
+
+### 🧲 useDrag Hook
+Smooth drag behavior using requestAnimationFrame
+
+Prevents click events while dragging
+
+Cleans up event listeners to avoid memory leaks
+
+### 🎨 Customization
+Add New Note Colors
+Update the colors array in NoteModal.tsx
+
+Update the getColorClasses function in StickyNote.tsx
+
+Modify Note Size
+Adjust the w-* and h-* Tailwind classes in StickyNote.tsx
+
+Change Cork Board Background
+Replace the background.png in the assets/ folder with your preferred image
