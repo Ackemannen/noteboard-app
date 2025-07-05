@@ -18,6 +18,8 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
   const [hasDragged, setHasDragged] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const initialPos = useRef(initialPosition);
+  const isDraggingRef = useRef(false);
+  const currentPositionRef = useRef(initialPosition);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (disabled) return;
@@ -26,13 +28,14 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
     e.stopPropagation();
     
     setIsDragging(true);
+    isDraggingRef.current = true;
     setHasDragged(false);
     
     dragStartPos.current = { x: e.clientX, y: e.clientY };
     initialPos.current = position;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (disabled) return;
+      if (disabled || !isDraggingRef.current) return;
       
       const deltaX = (e.clientX - dragStartPos.current.x) / zoom;
       const deltaY = (e.clientY - dragStartPos.current.y) / zoom;
@@ -42,17 +45,22 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
         setHasDragged(true);
       }
       
-      setPosition({
+      const newPosition = {
         x: initialPos.current.x + deltaX,
         y: initialPos.current.y + deltaY
-      });
+      };
+      
+      setPosition(newPosition);
+      currentPositionRef.current = newPosition;
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      isDraggingRef.current = false;
       
       if (onDragEnd && !disabled) {
-        onDragEnd(position);
+        // Use the ref to get the most current position
+        onDragEnd(currentPositionRef.current);
       }
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -64,8 +72,12 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
   }, [position, onDragEnd, hasDragged, disabled, zoom]);
 
   // Update position when initialPosition changes (for external updates)
+  // Only update if we're not currently dragging to avoid conflicts
   useEffect(() => {
-    setPosition(initialPosition);
+    if (!isDraggingRef.current) {
+      setPosition(initialPosition);
+      currentPositionRef.current = initialPosition;
+    }
   }, [initialPosition.x, initialPosition.y]);
 
   return {

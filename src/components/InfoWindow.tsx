@@ -10,13 +10,13 @@ const InfoWindow: React.FC<InfoWindowProps> = ({
   selectedCount,
   totalNotes,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   if (isCollapsed) {
     return (
       <button
         onClick={() => setIsCollapsed(false)}
-        className="fixed top-4 right-4 z-30 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-colors"
+        className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-colors"
         title="Show info"
       >
         <Info size={20} />
@@ -25,15 +25,15 @@ const InfoWindow: React.FC<InfoWindowProps> = ({
   }
 
   return (
-    <div className="fixed top-4 right-4 z-30 bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-sm">
+    <div className="z-30 bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-sm">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-amber-900 flex items-center gap-2">
           <Info size={18} />
-          Digital Cork Board
+          Collaboard
         </h2>
         <button
           onClick={() => setIsCollapsed(true)}
-          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+          className="p-1 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
           title="Collapse"
         >
           <Minimize2 size={16} />

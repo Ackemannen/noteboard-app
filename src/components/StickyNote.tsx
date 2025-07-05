@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDrag } from "../hooks/useDrag";
 
 interface Note {
@@ -28,7 +28,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   isSelected = false,
   hasDraggedGroup = false,
   zoom,
-  "data-note-id": dataNodeId,
 }) => {
   const { isDragging, position, hasDragged, handleMouseDown } = useDrag({
     initialPosition: { x: note.x, y: note.y },
@@ -39,6 +38,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     disabled: isSelected,
     zoom, // Pass zoom to the hook for proper calculations
   });
+
+  // Update position when note changes from external updates
+  useEffect(() => {
+    // This will be handled by the useDrag hook's useEffect
+  }, [note.x, note.y]);
 
   const getColorClasses = (color: string) => {
     switch (color) {
