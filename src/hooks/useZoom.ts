@@ -59,13 +59,14 @@ export const useZoom = ({ minZoom = 0.5, maxZoom = 3, initialZoom = 1 }: UseZoom
     setPanOffset({ x: 0, y: 0 });
   }, [initialZoom]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  // Change parameter type from React.TouchEvent to native TouchEvent
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     if (e.touches.length === 1) {
       // Single touch - panning
       isPanning.current = true;
       lastPanPoint.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     } else if (e.touches.length === 2) {
-      // Two touches - zooming
+      // Two touches - pinch to zoom
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.sqrt(
