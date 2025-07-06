@@ -29,7 +29,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   hasDraggedGroup = false,
   zoom,
 }) => {
-  const { isDragging, position, hasDragged, handleMouseDown } = useDrag({
+  const {
+    isDragging,
+    position,
+    hasDragged,
+    handleMouseDown,
+    handleTouchStart,
+  } = useDrag({
     initialPosition: { x: note.x, y: note.y },
     onDragEnd: (newPosition) => {
       onPositionChange(note.id, newPosition.x, newPosition.y);
@@ -83,6 +89,15 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     handleMouseDown(e);
   };
 
+  const handleNoteTouchStart = (e: React.TouchEvent) => {
+    // Don't start individual drag if note is selected
+    if (isSelected) {
+      return;
+    }
+
+    handleTouchStart(e);
+  };
+
   return (
     <div
       className={`sticky-note absolute w-48 h-48 p-4 rounded-lg border-2 select-none will-change-transform ${getColorClasses(
@@ -107,12 +122,14 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           : isSelected
           ? "0 16px 35px rgba(59, 130, 246, 0.4), 0 8px 18px rgba(59, 130, 246, 0.3)"
           : "0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)",
+        touchAction: "none",
       }}
       data-note-id={note.id}
       data-x={position.x}
       data-y={position.y}
       onMouseDown={handleNoteMouseDown}
       onClick={handleNoteClick}
+      onTouchStart={handleNoteTouchStart}
       onMouseEnter={(e) => {
         if (!isDragging && !isSelected) {
           const element = e.currentTarget;

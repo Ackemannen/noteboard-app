@@ -43,6 +43,9 @@ const Index = () => {
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
     zoomIn,
     zoomOut,
     resetZoom,
@@ -182,19 +185,53 @@ const Index = () => {
       debouncedSave(notes);
     };
 
+    const handleTouchMoveGroup = (e: TouchEvent) => {
+      handleTouchMove(e);
+    };
+
+    const handleTouchEndGroup = () => {
+      handleTouchEnd();
+      handleSelectionEnd();
+      stopDraggingSelected();
+      setIsDragging(false);
+
+      // Force save after drag ends
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      debouncedSave(notes);
+    };
+
+    const handleTouchStartWrapper = (e: TouchEvent) => {
+      handleTouchStart(e);
+    };
+
     board.addEventListener("wheel", handleWheel, { passive: false });
     document.addEventListener("mousemove", handleMouseMoveGroup);
     document.addEventListener("mouseup", handleMouseUpGroup);
+    document.addEventListener("touchstart", handleTouchStartWrapper, {
+      passive: false,
+    });
+    document.addEventListener("touchmove", handleTouchMoveGroup, {
+      passive: false,
+    });
+    document.addEventListener("touchend", handleTouchEndGroup);
 
     return () => {
       board.removeEventListener("wheel", handleWheel);
       document.removeEventListener("mousemove", handleMouseMoveGroup);
       document.removeEventListener("mouseup", handleMouseUpGroup);
+      document.removeEventListener("touchstart", handleTouchStartWrapper);
+      document.removeEventListener("touchmove", handleTouchMoveGroup);
+      document.removeEventListener("touchend", handleTouchEndGroup);
     };
   }, [
     handleWheel,
     handleMouseMove,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
     handleSelectionMove,
     handleSelectionEnd,
     handleSelectedNotesMove,
@@ -341,7 +378,7 @@ const Index = () => {
           onClick={() => handleCopyShare(boardId!)}
         >
           <Link className="h-4 w-4" />
-          Share
+          <span className="sm:block hidden">Share</span>
         </button>
 
         {/* Back Button */}
@@ -350,7 +387,7 @@ const Index = () => {
           className="flex items-center h-10 gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-gray-200 transition-colors border border-gray-300"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Boards
+          <span className="sm:block hidden">Back to Boards</span>
         </button>
       </div>
 

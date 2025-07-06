@@ -16,5 +16,9 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    // Make sure .env files are not copied
+    rollupOptions: {
+      external: [/\.env$/]
+    }
   },
 });

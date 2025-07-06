@@ -169,7 +169,7 @@ const NoteModal: React.FC<NoteModalProps> = ({
                 className="flex items-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete
+                <span className="sm:block hidden">Delete</span>
               </Button>
             )}
             <div className="flex-1" />
@@ -181,7 +181,8 @@ const NoteModal: React.FC<NoteModalProps> = ({
               className="bg-amber-600 hover:bg-amber-700"
               disabled={!content.trim()}
             >
-              {initialData ? "Update" : "Create"} Note
+              {initialData ? "Update" : "Create"}{" "}
+              <span className="sm:block hidden">Note</span>
             </Button>
           </div>
         </form>

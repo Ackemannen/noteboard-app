@@ -53,9 +53,17 @@ const CorkBoard: React.FC<CorkBoardProps> = ({
       style={{
         transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
         transformOrigin: "0 0",
+        touchAction: "none", // Prevent default touch behaviors
       }}
       onClick={onBoardClick}
       onMouseDown={onBoardMouseDown}
+      // Add touch handlers for board panning
+      onTouchStart={(e) => {
+        if (e.touches.length === 1) {
+          // Single touch for panning
+          onBoardMouseDown(e as any); // Convert to mouse event
+        }
+      }}
     >
       {/* Render all sticky notes */}
       {notes.map((note) => (

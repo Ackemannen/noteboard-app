@@ -25,3 +25,10 @@ dist-ssr
 
 # Environment variables
 .env
+.env.local
+.env.development
+.env.production
+
+# Build output
+dist/
+dist-ssr/

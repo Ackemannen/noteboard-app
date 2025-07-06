@@ -71,6 +71,61 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
     document.addEventListener('mouseup', handleMouseUp);
   }, [position, onDragEnd, hasDragged, disabled, zoom]);
 
+  // Adding touch events
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (disabled || e.touches.length !== 1) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const touch = e.touches[0];
+    setIsDragging(true);
+    isDraggingRef.current = true;
+    setHasDragged(false);
+
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+    initialPos.current = position;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (disabled || !isDraggingRef.current || e.touches.length !== 1) return;
+
+      e.preventDefault(); // Prevents scrolling while dragging
+
+      const touch = e.touches[0];
+      const deltaX = (touch.clientX - dragStartPos.current.x) / zoom;
+      const deltaY = (touch.clientY - dragStartPos.current.y) / zoom;
+
+      // Mark as dragged if moved more than 5 pixels
+      if (!hasDragged && (Math.abs(deltaX * zoom) > 5 || Math.abs(deltaY * zoom) > 5)) {
+        setHasDragged(true);
+      }
+
+      const newPosition = {
+        x: initialPos.current.x + deltaX,
+        y: initialPos.current.y + deltaY
+      };
+
+      setPosition(newPosition);
+      currentPositionRef.current = newPosition;
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+      isDraggingRef.current = false;
+
+      if (onDragEnd && !disabled) {
+        onDragEnd(currentPositionRef.current);
+      }
+
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+
+    // Add the event listeners without passive option
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+  }, [position, onDragEnd, hasDragged, disabled, zoom]);
+
   // Update position when initialPosition changes (for external updates)
   // Only update if we're not currently dragging to avoid conflicts
   useEffect(() => {
@@ -84,6 +139,7 @@ export const useDrag = ({ initialPosition, onDragEnd, disabled = false, zoom = 1
     isDragging: isDragging && !disabled,
     position,
     hasDragged,
-    handleMouseDown
+    handleMouseDown,
+    handleTouchStart
   };
 };

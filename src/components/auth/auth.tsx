@@ -81,7 +81,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0 relative">
+    <div className="flex flex-col h-screen items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0 relative">
       <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-amber-900/20 pointer-events-none"></div>
       <div className="w-full bg-yellow-200 border-yellow-300 shadow-yellow-200/50 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0 relative z-10 rotate-1">
         <div className="transform -translate-y-1/2 w-26 h-8 m-auto bg-white/60 rounded-sm shadow-sm border border-gray-200"></div>
