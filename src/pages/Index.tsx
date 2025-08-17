@@ -12,6 +12,8 @@ import { db } from "../firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { ArrowLeft, Link } from "lucide-react";
 import { toast } from "sonner";
+import type { User } from "firebase/auth";
+import Auth from "./Auth";
 
 interface Note {
   id: string;
@@ -23,7 +25,7 @@ interface Note {
   rotation: number;
 }
 
-const Index = () => {
+const Index = ({ user }: { user: User | null }) => {
   const { id: boardId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -361,6 +363,11 @@ const Index = () => {
     toast.success("Share link copied to clipboard!");
   };
 
+  if (!user) {
+    navigate("/dashboard");
+    return <Auth />;
+  }
+
   return (
     <div className="min-h-screen bg-cork bg-cover bg-center relative overflow-hidden">
       {/* Cork board overlay for better texture */}
@@ -374,7 +381,7 @@ const Index = () => {
         />
 
         <button
-          className="flex items-center h-10 gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-gray-200 transition-colors border border-gray-300"
+          className="flex items-center h-10 gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-gray-200 transition-colors border border-gray-300 cursor-pointer"
           onClick={() => handleCopyShare(boardId!)}
         >
           <Link className="h-4 w-4" />
@@ -383,8 +390,8 @@ const Index = () => {
 
         {/* Back Button */}
         <button
-          onClick={() => navigate("/")}
-          className="flex items-center h-10 gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-gray-200 transition-colors border border-gray-300"
+          onClick={() => navigate("/dashboard")}
+          className="flex items-center h-10 gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-gray-200 transition-colors border border-gray-300 cursor-pointer"
         >
           <ArrowLeft className="h-4 w-4" />
           <span className="sm:block hidden">Back to Boards</span>

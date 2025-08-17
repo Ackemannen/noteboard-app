@@ -2,16 +2,17 @@ import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
+import BoardSelect from "./pages/BoardSelect";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import type { User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./firebase";
-import Auth from "./components/auth/auth";
-import BoardSelect from "./components/BoardSelect";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  //Auth checking
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -21,17 +22,15 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  if (!user) {
-    return <Auth />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
       <BrowserRouter basename="/noteboard-app">
         <Routes>
-          <Route path="/" element={<BoardSelect />} />
-          <Route path="/boards/:id" element={<Index />} />
+          <Route path="/" element={<Landing user={user} />} />
+          <Route path="/dashboard" element={<BoardSelect user={user} />} />
+          <Route path="/boards/:id" element={<Index user={user} />} />
+          <Route path="/auth" element={<Auth />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

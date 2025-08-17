@@ -1,9 +1,11 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../../firebase";
+import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { Button } from "../ui/button";
+import { Button } from "../components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -12,6 +14,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleAuth = async (isSignUp: boolean) => {
     setLoading(true);
@@ -35,8 +38,10 @@ const Auth = () => {
         });
 
         alert(`User created: ${email}`);
+        navigate("/dashboard");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        navigate("/dashboard");
       }
     } catch (err: unknown) {
       console.error("Full error object:", err);
@@ -82,9 +87,13 @@ const Auth = () => {
 
   return (
     <div className="flex flex-col h-screen items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-amber-900/20 pointer-events-none"></div>
+      {/*<div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-amber-900/20 pointer-events-none"></div>*/}
       <div className="w-full bg-yellow-200 border-yellow-300 rounded-lg shadow-2xl md:mt-0 sm:max-w-md xl:p-0 relative z-10 rotate-1">
         <div className="transform -translate-y-1/2 w-26 h-8 m-auto bg-white/60 rounded-sm shadow-sm border border-gray-200"></div>
+        <ArrowLeft
+          className="absolute top-4 left-4 cursor-pointer"
+          onClick={() => navigate("/")}
+        />
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
           <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
             {isSignUp ? "Create an account" : "Sign in to your account"}
