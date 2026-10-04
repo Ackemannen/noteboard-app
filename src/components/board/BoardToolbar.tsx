@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleHelp, Hand, Link as LinkIcon, SquareDashedMousePointer, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { PresenceSession } from "@/hooks/useBoardPresence";
 import type { CanvasMode } from "./BoardCanvas";
+import PresenceAvatars from "./PresenceAvatars";
 
 interface BoardToolbarProps {
   boardName: string;
@@ -11,6 +13,8 @@ interface BoardToolbarProps {
   mode: CanvasMode;
   onModeChange: (mode: CanvasMode) => void;
   onShare: () => void;
+  /** People currently on the board. */
+  sessions: PresenceSession[];
 }
 
 const SHORTCUTS: [string, string][] = [
@@ -39,6 +43,7 @@ export default function BoardToolbar({
   mode,
   onModeChange,
   onShare,
+  sessions,
 }: BoardToolbarProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
@@ -99,6 +104,8 @@ export default function BoardToolbar({
         <LinkIcon className="size-4" />
         <span className="hidden sm:inline">Share</span>
       </button>
+
+      <PresenceAvatars sessions={sessions} className={shell} />
 
       {/* Not "relative": the popover anchors to the whole toolbar so it fits on small screens */}
       <div ref={helpRef}>

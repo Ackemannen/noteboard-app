@@ -7,6 +7,8 @@ interface StickyNoteProps {
   isSelected: boolean;
   /** Being dragged right now. */
   isLifted: boolean;
+  /** Set while someone else drags this note: their color. */
+  remoteColor?: string;
 }
 
 /**
@@ -17,6 +19,7 @@ const StickyNote = memo(function StickyNote({
   note,
   isSelected,
   isLifted,
+  remoteColor,
 }: StickyNoteProps) {
   return (
     <div
@@ -28,13 +31,20 @@ const StickyNote = memo(function StickyNote({
         width: NOTE_SIZE,
         height: NOTE_SIZE,
         transform: `translate(-50%, -50%) rotate(${note.rotation}deg)`,
+        // Smooth out the gaps between someone else's throttled drag updates.
+        transition: remoteColor ? "left 60ms linear, top 60ms linear" : undefined,
       }}
     >
       <div
+        style={
+          remoteColor
+            ? { outline: `3px solid ${remoteColor}`, outlineOffset: 3 }
+            : undefined
+        }
         className={cn(
           "relative h-full w-full rounded-lg border-2 p-4 transition-[transform,box-shadow] duration-150 ease-out",
           noteColor(note.color).className,
-          isLifted
+          isLifted || remoteColor
             ? "scale-105 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_10px_20px_rgba(0,0,0,0.2)]"
             : "shadow-[0_8px_25px_rgba(0,0,0,0.15),0_4px_10px_rgba(0,0,0,0.1)] hover:scale-[1.03] hover:rotate-1",
           isSelected &&

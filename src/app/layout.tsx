@@ -13,7 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: extensions may still add attributes to <html> itself.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* The app has its own light design; stop Dark Reader from rewriting the
+            DOM before hydration (which causes hydration mismatch errors). */}
+        <meta name="darkreader-lock" />
+      </head>
       <body>
         <Toaster />
         {children}

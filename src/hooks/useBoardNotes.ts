@@ -6,6 +6,9 @@ import { isSameNote, noteToRow, rowToNote, type Note } from "@/lib/notes";
 
 const SAVE_DEBOUNCE_MS = 150;
 
+/** A note position shared live while someone drags it. */
+export type NotePreview = Pick<Note, "id" | "x" | "y" | "z">;
+
 /**
  * Local note state for a board that is kept in sync with Supabase.
  *
@@ -143,5 +146,35 @@ export function useBoardNotes(boardId: string, initialNotes: Note[]) {
     };
   }, [boardId, supabase]);
 
-  return { notes, setNotes };
+  /** Save pending changes right away (e.g. when a drag ends) instead of debouncing. */
+  const saveNow = useCallback(() => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = null;
+    void flush();
+  }, [flush]);
+
+  /**
+   * Show another user's in-progress drag. Treated as already-saved state, so
+   * this client never writes it back; their own save on drop arrives later
+   * over postgres_changes with the same values. Notes with unsaved local edits
+   * keep the local version.
+   */
+  const applyRemotePreview = useCallback((moves: NotePreview[]) => {
+    const server = serverNotesRef.current;
+    const updates = new Map<string, Note>();
+    for (const move of moves) {
+      const local = notesRef.current.find((note) => note.id === move.id);
+      const saved = server.get(move.id);
+      if (!local || (saved && !isSameNote(saved, local))) continue;
+      const next = { ...local, x: move.x, y: move.y, z: move.z };
+      server.set(move.id, next);
+      updates.set(move.id, next);
+    }
+    if (updates.size === 0) return;
+    // Keep the ref in step so several previews between renders build on each other.
+    notesRef.current = notesRef.current.map((note) => updates.get(note.id) ?? note);
+    setNotes((prev) => prev.map((note) => updates.get(note.id) ?? note));
+  }, []);
+
+  return { notes, setNotes, saveNow, applyRemotePreview };
 }

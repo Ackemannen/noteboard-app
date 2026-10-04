@@ -65,6 +65,14 @@ export interface BoardCanvasProps {
   onBringToFront: (ids: string[]) => void;
   onOpenNote: (id: string) => void;
   onCreateNote: (world: Point) => void;
+  /** Called once when a note drag finishes (or is interrupted). */
+  onDragEnd?: () => void;
+  /** Notes someone else is dragging right now, mapped to that person's color. */
+  remoteMoving?: ReadonlyMap<string, string>;
+  /** Where the pointer is on the board (world coordinates), or null when it leaves. */
+  onPointerWorldMove?: (world: Point | null) => void;
+  /** Extra content drawn in the world layer above the notes (e.g. remote cursors). */
+  overlay?: React.ReactNode;
 }
 
 const dragThreshold = (pointerType: string) => (pointerType === "touch" ? 8 : 3);
@@ -152,7 +160,9 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   };
 
   const endGesture = () => {
+    const wasDragging = gesture.current.kind === "drag";
     gesture.current = { kind: "none" };
+    if (wasDragging) latest.current.onDragEnd?.();
     setMarquee(null);
     setLiftedIds(new Set());
     setIsGrabbing(false);
@@ -166,7 +176,11 @@ export default function BoardCanvas(props: BoardCanvasProps) {
 
     const point = localPoint(e);
     pointers.current.set(e.pointerId, point);
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // The pointer may already be gone (e.g. released before this ran); carry on uncaptured.
+    }
 
     if (pointers.current.size === 2) {
       startPinch();
@@ -200,8 +214,11 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
     const point = localPoint(e);
+    latest.current.onPointerWorldMove?.(
+      screenToWorld(point, latest.current.cameraRef.current)
+    );
+    if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, point);
 
     const g = gesture.current;
@@ -379,6 +396,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       onPointerMove={handlePointerMove}
       onPointerUp={(e) => finishPointer(e, false)}
       onPointerCancel={(e) => finishPointer(e, true)}
+      onPointerLeave={() => latest.current.onPointerWorldMove?.(null)}
       onContextMenu={(e) => e.preventDefault()}
     >
       {/* Soft vignette for depth */}
@@ -397,8 +415,10 @@ export default function BoardCanvas(props: BoardCanvasProps) {
             note={note}
             isSelected={selectedSet.has(note.id)}
             isLifted={liftedIds.has(note.id)}
+            remoteColor={props.remoteMoving?.get(note.id)}
           />
         ))}
+        {props.overlay}
       </div>
 
       {marqueeScreen && (

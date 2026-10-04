@@ -11,7 +11,13 @@ import NavigatorPanel, {
 } from "@/components/board/NavigatorPanel";
 import NoteModal from "@/components/board/NoteModal";
 import SelectionBar from "@/components/board/SelectionBar";
+import RemoteCursors from "@/components/board/RemoteCursors";
 import { useBoardNotes } from "@/hooks/useBoardNotes";
+import {
+  useBoardPresence,
+  type CurrentUser,
+  type NotesMoveMessage,
+} from "@/hooks/useBoardPresence";
 import { useCamera } from "@/hooks/useCamera";
 import { useViewportSize } from "@/hooks/useViewportSize";
 import {
@@ -30,6 +36,7 @@ export interface BoardProps {
   initialNotes: Note[];
   /** True the first time this user opens the board through a share link. */
   justJoined: boolean;
+  currentUser: CurrentUser;
 }
 
 const ZOOM_STEP = 1.25;
@@ -52,9 +59,83 @@ function initialCamera(notes: Note[], viewport: Size, mapOpen: boolean): Camera 
 const isTyping = (target: EventTarget | null) =>
   !!(target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable='true']");
 
-export default function Board({ boardId, boardName, initialNotes, justJoined }: BoardProps) {
+export default function Board({
+  boardId,
+  boardName,
+  initialNotes,
+  justJoined,
+  currentUser,
+}: BoardProps) {
   const router = useRouter();
-  const { notes, setNotes } = useBoardNotes(boardId, initialNotes);
+  const { notes, setNotes, saveNow, applyRemotePreview } = useBoardNotes(
+    boardId,
+    initialNotes
+  );
+  const notesRef = useRef(notes);
+  useLayoutEffect(() => {
+    notesRef.current = notes;
+  });
+
+  // Notes other people are dragging right now, per session (for highlighting).
+  const [remoteMovers, setRemoteMovers] = useState<
+    Record<string, { ids: string[]; color: string }>
+  >({});
+  const moverTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  const handleRemoteNotesMove = useCallback(
+    (message: NotesMoveMessage) => {
+      applyRemotePreview(message.notes);
+
+      const { sessionId, color } = message;
+      const timers = moverTimers.current;
+      const pending = timers.get(sessionId);
+      if (pending) clearTimeout(pending);
+      const stopHighlight = () => {
+        timers.delete(sessionId);
+        setRemoteMovers((prev) =>
+          sessionId in prev
+            ? Object.fromEntries(Object.entries(prev).filter(([id]) => id !== sessionId))
+            : prev
+        );
+      };
+
+      if (message.done) {
+        stopHighlight();
+        return;
+      }
+      const ids = message.notes.map((note) => note.id);
+      setRemoteMovers((prev) => {
+        const current = prev[sessionId];
+        const unchanged =
+          current?.color === color &&
+          current.ids.length === ids.length &&
+          current.ids.every((id, i) => id === ids[i]);
+        return unchanged ? prev : { ...prev, [sessionId]: { ids, color } };
+      });
+      // In case the drop message never arrives, stop highlighting after a pause.
+      timers.set(sessionId, setTimeout(stopHighlight, 1500));
+    },
+    [applyRemotePreview]
+  );
+
+  useEffect(() => {
+    const timers = moverTimers.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const remoteMoving = useMemo(() => {
+    const byNote = new Map<string, string>();
+    for (const { ids, color } of Object.values(remoteMovers)) {
+      ids.forEach((id) => byNote.set(id, color));
+    }
+    return byNote;
+  }, [remoteMovers]);
+
+  const { sessions, cursors, sendCursor, sendNoteMoves, endNoteMoves } = useBoardPresence(
+    boardId,
+    currentUser,
+    { onRemoteNotesMove: handleRemoteNotesMove }
+  );
   const sortedNotes = useMemo(() => sortByZ(notes), [notes]);
   const viewport = useViewportSize();
   const [mapOpen, setMapOpen] = useState(() => readMinimapOpen(viewport));
@@ -82,15 +163,29 @@ export default function Board({ boardId, boardName, initialNotes, justJoined }: 
   // Note operations
   // ---------------------------------------------------------------------------
   const moveNotes = useCallback(
-    (positions: Map<string, Point>) =>
+    (positions: Map<string, Point>) => {
       setNotes((prev) =>
         prev.map((note) => {
           const position = positions.get(note.id);
           return position ? { ...note, ...position } : note;
         })
-      ),
-    [setNotes]
+      );
+      // Others see the drag live; the database is written once on drop.
+      sendNoteMoves(
+        [...positions].map(([id, position]) => ({
+          id,
+          ...position,
+          z: notesRef.current.find((note) => note.id === id)?.z ?? 0,
+        }))
+      );
+    },
+    [setNotes, sendNoteMoves]
   );
+
+  const handleDragEnd = useCallback(() => {
+    endNoteMoves();
+    saveNow();
+  }, [endNoteMoves, saveNow]);
 
   const bringToFront = useCallback(
     (ids: string[]) =>
@@ -322,6 +417,10 @@ export default function Board({ boardId, boardName, initialNotes, justJoined }: 
           if (note) setModal({ note, at: { x: note.x, y: note.y } });
         }}
         onCreateNote={(at) => setModal({ note: null, at })}
+        onPointerWorldMove={sendCursor}
+        onDragEnd={handleDragEnd}
+        remoteMoving={remoteMoving}
+        overlay={<RemoteCursors store={cursors} sessions={sessions} zoom={camera.zoom} />}
       />
 
       <BoardToolbar
@@ -330,6 +429,7 @@ export default function Board({ boardId, boardName, initialNotes, justJoined }: 
         mode={mode}
         onModeChange={setMode}
         onShare={share}
+        sessions={sessions}
       />
 
       <SelectionBar
