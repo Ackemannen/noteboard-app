@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,9 +27,12 @@ const NoteModal: React.FC<NoteModalProps> = ({
   onDelete,
   initialData,
 }) => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [selectedColor, setSelectedColor] = useState("yellow");
+  // The parent remounts this modal (via key) per note, so props seed the state.
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [content, setContent] = useState(initialData?.content ?? "");
+  const [selectedColor, setSelectedColor] = useState(
+    initialData?.color ?? "yellow"
+  );
 
   const colors = [
     {
@@ -47,17 +50,6 @@ const NoteModal: React.FC<NoteModalProps> = ({
     },
   ];
 
-  useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title);
-      setContent(initialData.content);
-      setSelectedColor(initialData.color);
-    } else {
-      setTitle("");
-      setContent("");
-      setSelectedColor("yellow");
-    }
-  }, [initialData, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

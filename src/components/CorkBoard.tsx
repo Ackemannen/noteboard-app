@@ -61,7 +61,7 @@ const CorkBoard: React.FC<CorkBoardProps> = ({
       onTouchStart={(e) => {
         if (e.touches.length === 1) {
           // Single touch for panning
-          onBoardMouseDown(e as any); // Convert to mouse event
+          onBoardMouseDown(e as unknown as React.MouseEvent<HTMLDivElement>); // Treat as mouse event
         }
       }}
     >

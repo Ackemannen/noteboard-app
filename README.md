@@ -1,133 +1,155 @@
-# 🧷 Digital Cork Board
+# 🧷 Collaboard
 
-A beautiful and interactive digital cork board built with React, TypeScript, and Tailwind CSS. Create, edit, and organize sticky notes with a realistic cork board experience — just like the real thing, but better!
+A collaborative digital cork board. Create, edit and drag sticky notes around a
+board, and share it with others. Everyone with the link edits the same board in real time.
 
+Built with **Next.js 16** (App Router), **Supabase** (Postgres, Auth, Realtime),
+TypeScript and Tailwind CSS 4.
 
 ## ✨ Features
-📝 Interactive Sticky Notes – Create, edit, and delete notes instantly
 
-🎨 Colorful Notes – Choose from 5 vibrant colors: Yellow, Pink, Blue, Green, Orange
+- 📝 Sticky notes: click anywhere to create, click a note to edit or delete
+- 🎨 Five note colors with a slight random rotation for an organic look
+- 🖱️ Drag & drop, shift-drag lasso selection, and moving groups of notes
+- 🔍 Zoom (wheel / pinch) and pan (middle-click, ctrl-drag, touch)
+- 🔐 Email/password and Google sign-in
+- 🔗 Share links. Opening a board's link adds you as a collaborator
+- ⚡ Live sync between everyone viewing a board (Supabase Realtime)
 
-🖱️ Drag & Drop – Smooth repositioning with mouse or touch support
+## 🚀 Getting started
 
-💾 Persistent Storage – Notes are saved automatically via localStorage
+Prerequisites: Node.js 20.9+ and a Supabase project.
 
-🧱 Realistic Design – Authentic cork board look with sticky note texture
+1. **Install dependencies**
 
-📱 Responsive Layout – Works great on both desktop and mobile devices
-
-⚡ Smooth Animations – Includes subtle hover effects and transitions
-
-🌀 Random Rotation – Notes appear with slight rotation for that organic, realistic feel
-
-## 🚀 Installation
-
-### Prerequisites
-
-Make sure you have the following installed:
-
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- npm or yarn
-
-### 🛠️ Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/digital-cork-board.git
-   cd digital-cork-board
-   ```
-
-2. **Install dependencies**
    ```bash
    npm install
-    # or
-    yarn install
    ```
 
-3. **Start the developement server**
+2. **Environment variables.** Copy `.env.example` to `.env` and fill it in:
+
+   | Variable | Where to find it |
+   | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Project Settings → API Keys |
+   | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | Google Cloud → Credentials (only used by the local Supabase stack) |
+
+3. **Set up the database** (once). See [Database & migrations](#-database--migrations).
+
+   ```bash
+   npm run db:login
+   npm run db:link -- --project-ref <your-project-ref>
+   npm run db:push
+   ```
+
+4. **Run the dev server** and open http://localhost:3000
+
    ```bash
    npm run dev
-    # or
-    yarn dev
-    ```
+   ```
 
-4. **Open in browser** 
-  Then open your browser and navigate to:
-  http://localhost:5173
+## 🗄️ Database & migrations
 
-## 📦 Available Scripts
-Script	Description
-npm run dev	Start development server
-npm run build	Build app for production
-npm run preview	Preview production build
-npm run lint	Run ESLint to check code quality
+The schema lives in versioned SQL files in [`supabase/migrations`](supabase/migrations),
+managed with the Supabase CLI (installed as a dev dependency, so `npx supabase …` and the
+npm scripts below work without a global install). The migrations are the source of truth:
+don't edit tables in the dashboard. Write a migration instead, so every environment stays
+reproducible.
 
-## 🎮 How to Use
-Create a Note – Click anywhere on the board
+### Making a schema change
 
-Edit a Note – Click an existing note to edit title, content, or color
-
-Move Notes – Drag and drop notes to rearrange them freely
-
-Delete Notes – Open a note and click the 🗑️ delete button
-
-Change Color – Select from 5 preset colors while editing or creating a note
-
-## 🛠️ Tech Stack
-Tool	Purpose
-React 19.1.0	UI framework
-TypeScript 5.8.3	Static typing
-Vite 7.0.0	Build and development server
-Tailwind CSS 4.1.11	Utility-first CSS styling
-Radix UI	Accessible UI primitives
-Lucide React	Icon library
-React Hook Form	Form management
-React Query	State management and caching
-React Router DOM	Routing
-Sonner	Toast notifications
-
-## 📁 Project Structure
-```plaintext
-src/
-├── components/
-│   ├── StickyNote.tsx         # Individual note component
-│   ├── NoteModal.tsx          # Modal for editing/creating notes
-│   └── hooks/useDrag.ts       # Custom hook for drag-and-drop
-├── assets/                    # Cork board background, icons, etc.
-├── App.tsx
-└── main.tsx
+```bash
+npm run db:new -- add_note_z_index      # creates supabase/migrations/<timestamp>_add_note_z_index.sql
+# ...write your SQL in that file...
+npm run db:push:dry                      # preview what will be applied
+npm run db:push                          # apply to the linked project
+npm run db:types                         # regenerate src/lib/supabase/database.types.ts
 ```
 
-## 🧩 Key Components
-### 🗒️ StickyNote
-Renders individual sticky notes with animations
+Commit the migration and the regenerated types together.
 
-Implements drag-and-drop and random rotation
+| Script | What it does |
+| --- | --- |
+| `db:login` | Authenticate the Supabase CLI (once per machine) |
+| `db:link` | Link this repo to your hosted project (`-- --project-ref <ref>`) |
+| `db:new` | Create a new, timestamped migration file |
+| `db:push` / `db:push:dry` | Apply pending migrations to the linked project / preview them |
+| `db:status` | Show which migrations are applied locally vs remotely |
+| `db:types` | Regenerate TypeScript types from the linked database |
+| `db:pull` | Pull changes made in the dashboard into a new migration |
+| `db:start` / `db:stop` / `db:reset` / `db:diff` / `db:types:local` | Local Supabase stack (requires Docker) |
 
-Uses Tailwind classes for styling
+### Automatic deploys (GitHub Actions)
 
-### 🪟 NoteModal
-Modal for creating and editing notes
+[`.github/workflows/supabase-migrations.yml`](.github/workflows/supabase-migrations.yml):
 
-Color selection with preview
+- **Pull requests** touching `supabase/**` spin up a throwaway Postgres, apply every
+  migration and lint the SQL functions, so a broken migration can't be merged.
+- **Pushes to `master`/`main`** that add migrations run `supabase db push` against
+  production.
 
-Includes delete functionality and validation
+To enable deploys, add these repository secrets (Settings → Secrets and variables → Actions):
 
-### 🧲 useDrag Hook
-Smooth drag behavior using requestAnimationFrame
+| Secret | Value |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | A personal access token from supabase.com/dashboard/account/tokens |
+| `SUPABASE_DB_PASSWORD` | Your project's database password |
+| `SUPABASE_PROJECT_ID` | Your project ref (the subdomain in `NEXT_PUBLIC_SUPABASE_URL`) |
 
-Prevents click events while dragging
+### Data model
 
-Cleans up event listeners to avoid memory leaks
+| Table | Purpose |
+| --- | --- |
+| `boards` | A board and its owner. Only the owner can rename or delete it |
+| `board_members` | Who can access a board. The owner is added automatically; `join_board()` adds people who open a share link |
+| `notes` | Sticky notes (text, color, position, rotation) belonging to a board |
 
-### 🎨 Customization
-Add New Note Colors
-Update the colors array in NoteModal.tsx
+Row Level Security is enabled on every table: users only ever see boards they're a member of.
 
-Update the getColorClasses function in StickyNote.tsx
+## 🔐 Authentication setup
 
-Modify Note Size
-Adjust the w-* and h-* Tailwind classes in StickyNote.tsx
+In the Supabase dashboard → **Authentication**:
 
-Change Cork Board Background
-Replace the background.png in the assets/ folder with your preferred image
+- **URL Configuration:** set *Site URL* to your production URL and add
+  `http://localhost:3000/**` and `https://<your-domain>/**` to *Redirect URLs*.
+- **Sign In / Providers → Google:** enable it and paste your Google client ID and secret.
+  In Google Cloud, the authorized redirect URI must be
+  `https://<project-ref>.supabase.co/auth/v1/callback`.
+- **Email confirmations** are on by default. New users get a link that lands on
+  `/auth/callback`.
+
+## 📦 Scripts
+
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check |
+
+## ☁️ Deployment
+
+The app uses server rendering, a Proxy (session refresh) and Route Handlers, so it needs a
+Node host such as [Vercel](https://vercel.com). It can no longer be deployed to GitHub
+Pages. Set the two `NEXT_PUBLIC_SUPABASE_*` environment variables in your host.
+
+## 📁 Project structure
+
+```plaintext
+src/
+├── app/
+│   ├── page.tsx                 # Landing page
+│   ├── auth/                    # Sign-in page, OAuth/email callback, sign-out action
+│   ├── dashboard/               # Board list + server actions (create/delete/leave)
+│   └── boards/[id]/             # Board page (server) + interactive Board (client)
+├── components/                  # CorkBoard, StickyNote, NoteModal, ZoomControls, ...
+├── hooks/
+│   ├── useBoardNotes.ts         # Notes state ⇄ Supabase (debounced saves + realtime)
+│   └── useDrag / useZoom / useSelection / useSelectedNotesMovement
+├── lib/supabase/                # Browser/server clients, proxy helper, generated types
+└── proxy.ts                     # Refreshes the auth session, guards private routes
+supabase/
+├── config.toml                  # Local Supabase stack config (incl. Google provider)
+└── migrations/                  # Versioned SQL migrations
+```
