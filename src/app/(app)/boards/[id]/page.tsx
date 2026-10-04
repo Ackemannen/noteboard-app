@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { rowToNote } from "@/lib/notes";
 import { rowToConnection } from "@/lib/connections";
+import { rowToMessage, rowToProfile, type Profile } from "@/lib/chat";
 import { createClient, getUser } from "@/lib/supabase/server";
 import BoardLoader from "./BoardLoader";
 
@@ -35,7 +36,8 @@ const loadBoard = cache(async (boardId: string) => {
   }
   if (!board) return null;
 
-  const [notesResult, connectionsResult] = await Promise.all([
+  const [notesResult, connectionsResult, messagesResult, readsResult, membersResult] =
+    await Promise.all([
     supabase
       .from("notes")
       .select("*")
@@ -43,16 +45,51 @@ const loadBoard = cache(async (boardId: string) => {
       .order("z", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase.from("connections").select("*").eq("board_id", boardId),
+    // ponytail: latest 200 messages only; add "load older" paging when chats get long.
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("board_id", boardId)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase.from("chat_reads").select("user_id, last_read_at").eq("board_id", boardId),
+    supabase.from("board_members").select("user_id").eq("board_id", boardId),
   ]);
-  if (notesResult.error) console.error("Failed to load notes:", notesResult.error);
-  if (connectionsResult.error) {
-    console.error("Failed to load connections:", connectionsResult.error);
+  for (const [label, result] of Object.entries({
+    notes: notesResult,
+    connections: connectionsResult,
+    messages: messagesResult,
+    reads: readsResult,
+    members: membersResult,
+  })) {
+    if (result.error) console.error(`Failed to load ${label}:`, result.error);
   }
+
+  const messages = (messagesResult.data ?? []).map(rowToMessage).reverse();
+  // Names/avatars for everyone who's a member or wrote one of the messages.
+  const people = [
+    ...new Set([
+      ...(membersResult.data ?? []).map((m) => m.user_id),
+      ...messages.map((m) => m.authorId),
+    ]),
+  ];
+  const { data: profileRows } = people.length
+    ? await supabase.from("profiles").select("*").in("id", people)
+    : { data: [] };
 
   return {
     board,
     notes: (notesResult.data ?? []).map(rowToNote),
     connections: (connectionsResult.data ?? []).map(rowToConnection),
+    chat: {
+      messages,
+      reads: Object.fromEntries(
+        (readsResult.data ?? []).map((r) => [r.user_id, r.last_read_at])
+      ),
+      profiles: Object.fromEntries(
+        (profileRows ?? []).map((row) => [row.id, rowToProfile(row)])
+      ) as Record<string, Profile>,
+    },
     justJoined,
   };
 });
@@ -82,6 +119,7 @@ export default async function BoardPage({ params }: Props) {
       boardName={result.board.name}
       initialNotes={result.notes}
       initialConnections={result.connections}
+      initialChat={result.chat}
       justJoined={result.justJoined}
       currentUser={{
         id: user.id,

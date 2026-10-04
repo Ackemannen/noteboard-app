@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   CircleHelp,
   Hand,
+  MessageCircle,
   Link as LinkIcon,
   MoveUpRight,
   Spline,
@@ -23,6 +24,9 @@ interface BoardToolbarProps {
   onShare: () => void;
   /** People currently on the board. */
   sessions: PresenceSession[];
+  chatOpen: boolean;
+  unreadCount: number;
+  onToggleChat: () => void;
 }
 
 const SHORTCUTS: [string, string][] = [
@@ -42,6 +46,7 @@ const SHORTCUTS: [string, string][] = [
   ["Thread / Arrow tool", "Drag from one note to another to connect them"],
   ["Click a thread or arrow", "Select it · Delete removes it"],
   ["H · V · T · A", "Pan · Select · Thread · Arrow tool"],
+  ["C", "Open or close the board chat"],
 ];
 
 const shell =
@@ -54,6 +59,9 @@ export default function BoardToolbar({
   onModeChange,
   onShare,
   sessions,
+  chatOpen,
+  unreadCount,
+  onToggleChat,
 }: BoardToolbarProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
@@ -119,6 +127,30 @@ export default function BoardToolbar({
       </button>
 
       <PresenceAvatars sessions={sessions} className={shell} />
+
+      <button
+        onClick={onToggleChat}
+        aria-pressed={chatOpen}
+        title="Board chat (C)"
+        className={cn(
+          shell,
+          "relative gap-2 px-3 text-sm font-medium",
+          chatOpen
+            ? "bg-blue-600 text-white hover:bg-blue-700"
+            : "text-foreground/80 hover:bg-card"
+        )}
+      >
+        <MessageCircle className="size-4" />
+        <span className="hidden sm:inline">Chat</span>
+        {unreadCount > 0 && !chatOpen && (
+          <span
+            className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-semibold tabular-nums text-white ring-2 ring-card"
+            aria-label={`${unreadCount} unread`}
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
 
       {/* Not "relative": the popover anchors to the whole toolbar so it fits on small screens */}
       <div ref={helpRef}>

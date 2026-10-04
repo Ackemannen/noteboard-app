@@ -34,6 +34,7 @@ export function navigatorPanelHeight(viewport: Size, open: boolean) {
 }
 
 interface NavigatorPanelProps {
+  className?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   notes: Note[];
@@ -50,6 +51,7 @@ const iconButton =
   "grid size-8 place-items-center rounded-md text-foreground/80 transition-colors hover:bg-muted active:bg-border disabled:opacity-40";
 
 export default function NavigatorPanel({
+  className,
   open,
   onOpenChange,
   notes,
@@ -69,7 +71,7 @@ export default function NavigatorPanel({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 rounded-xl border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur-sm">
+    <div className={cn("fixed bottom-4 right-4 z-40 rounded-xl border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur-sm transition-[right] duration-200", className)}>
       {open && (
         <div className="mb-1.5">
           <Minimap

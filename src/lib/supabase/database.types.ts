@@ -67,6 +67,32 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_reads: {
+        Row: {
+          board_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_reads_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           board_id: string
@@ -113,6 +139,51 @@ export type Database = {
           {
             foreignKeyName: "connections_to_note_id_fkey"
             columns: ["to_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          author_id: string
+          board_id: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          note_id: string | null
+        }
+        Insert: {
+          author_id?: string
+          board_id: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          note_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          board_id?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          note_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_note_id_fkey"
+            columns: ["note_id"]
             isOneToOne: false
             referencedRelation: "notes"
             referencedColumns: ["id"]
@@ -172,12 +243,34 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       join_board: { Args: { p_board_id: string }; Returns: boolean }
+      mark_chat_read: { Args: { p_board_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

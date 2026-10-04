@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Check, Trash2, X } from "lucide-react";
+import { Check, MessageCircle, Trash2, X } from "lucide-react";
 import { NOTE_COLORS, noteColor, type Note, type NoteColor } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,8 @@ interface NoteModalProps {
   onClose: () => void;
   onSave: (noteData: { title: string; content: string; color: string }) => void;
   onDelete?: () => void;
+  /** Open the board chat with this note pinned to a new message. */
+  onDiscuss?: () => void;
   initialData?: Note | null;
 }
 
@@ -26,6 +28,7 @@ const NoteModal: React.FC<NoteModalProps> = ({
   onClose,
   onSave,
   onDelete,
+  onDiscuss,
   initialData,
 }) => {
   // The parent remounts this modal (via key) per note, so props seed the state.
@@ -184,6 +187,17 @@ const NoteModal: React.FC<NoteModalProps> = ({
               >
                 <Trash2 className="size-4" />
                 Delete
+              </button>
+            )}
+            {onDiscuss && (
+              <button
+                type="button"
+                onClick={onDiscuss}
+                title="Open the board chat with this note pinned"
+                className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-[0.98]"
+              >
+                <MessageCircle className="size-4" />
+                <span className="hidden sm:inline">Chat about this</span>
               </button>
             )}
             <span className="ml-auto mr-1 hidden text-xs text-muted-foreground sm:inline">

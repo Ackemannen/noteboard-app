@@ -5,6 +5,7 @@ import { NOTE_COLORS, type NoteColor } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 
 interface SelectionBarProps {
+  className?: string;
   count: number;
   onColor: (color: NoteColor) => void;
   onDelete: () => void;
@@ -12,11 +13,17 @@ interface SelectionBarProps {
 }
 
 /** Actions for the current multi-selection, floating at the bottom of the board. */
-export default function SelectionBar({ count, onColor, onDelete, onClear }: SelectionBarProps) {
+export default function SelectionBar({
+  className,
+  count,
+  onColor,
+  onDelete,
+  onClear,
+}: SelectionBarProps) {
   if (count === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 pl-3 max-w-[calc(100vw-2rem)] overflow-x-auto shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]">
+    <div className={cn("fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 pl-3 max-w-[calc(100vw-2rem)] overflow-x-auto shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]", className)}>
       <span className="mr-1 whitespace-nowrap text-sm font-medium text-foreground">
         {count} selected
       </span>

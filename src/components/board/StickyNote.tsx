@@ -9,6 +9,8 @@ interface StickyNoteProps {
   isLifted: boolean;
   /** Set while someone else drags this note: their color. */
   remoteColor?: string;
+  /** Flash to draw attention (jumped to from the chat). */
+  isHighlighted?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ const StickyNote = memo(function StickyNote({
   isSelected,
   isLifted,
   remoteColor,
+  isHighlighted,
 }: StickyNoteProps) {
   return (
     <div
@@ -48,7 +51,8 @@ const StickyNote = memo(function StickyNote({
             ? "scale-105 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_10px_20px_rgba(0,0,0,0.2)]"
             : "shadow-[0_8px_25px_rgba(0,0,0,0.15),0_4px_10px_rgba(0,0,0,0.1)] hover:scale-[1.03] hover:rotate-1",
           isSelected &&
-            "ring-4 ring-blue-500/60 ring-offset-2 ring-offset-transparent"
+            "ring-4 ring-blue-500/60 ring-offset-2 ring-offset-transparent",
+          isHighlighted && "note-flash"
         )}
       >
         {/* Tape */}

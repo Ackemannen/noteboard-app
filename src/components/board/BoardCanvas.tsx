@@ -98,6 +98,8 @@ export interface BoardCanvasProps {
   onSelectConnection: (id: string | null) => void;
   onCreateConnection: (fromId: string, toId: string, kind: ConnectionKind) => void;
   onDeleteConnection: (id: string) => void;
+  /** Note to flash briefly (e.g. after jumping to it from the chat). */
+  highlightedNoteId?: string | null;
 }
 
 const dragThreshold = (pointerType: string) => (pointerType === "touch" ? 8 : 3);
@@ -485,6 +487,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
             isSelected={selectedSet.has(note.id)}
             isLifted={liftedIds.has(note.id)}
             remoteColor={props.remoteMoving?.get(note.id)}
+            isHighlighted={props.highlightedNoteId === note.id}
           />
         ))}
         <ConnectionsLayer

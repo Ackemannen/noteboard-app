@@ -100,3 +100,17 @@
 .dark {
   --arrow-ink: #e7e5e4;
 }
+
+/* Flash a note to draw attention to it (e.g. after jumping to it from the chat). */
+@keyframes note-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(37 99 235 / 0);
+  }
+  35% {
+    box-shadow: 0 0 0 10px rgb(37 99 235 / 0.55), 0 20px 40px rgb(0 0 0 / 0.3);
+  }
+}
+.note-flash {
+  animation: note-flash 1.2s ease-out 2;
+}

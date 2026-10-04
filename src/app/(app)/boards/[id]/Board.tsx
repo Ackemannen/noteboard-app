@@ -12,6 +12,8 @@ import NavigatorPanel, {
 import NoteModal from "@/components/board/NoteModal";
 import SelectionBar from "@/components/board/SelectionBar";
 import RemoteCursors from "@/components/board/RemoteCursors";
+import ChatPanel from "@/components/chat/ChatPanel";
+import { useBoardChat, type ChatSnapshot } from "@/hooks/useBoardChat";
 import { useBoardNotes } from "@/hooks/useBoardNotes";
 import { useBoardConnections } from "@/hooks/useBoardConnections";
 import type { Connection } from "@/lib/connections";
@@ -24,7 +26,9 @@ import { useCamera } from "@/hooks/useCamera";
 import { useViewportSize } from "@/hooks/useViewportSize";
 import {
   fitRect,
+  noteRect,
   notesBounds,
+  padRect,
   zoomAt,
   type Camera,
   type Point,
@@ -37,6 +41,7 @@ export interface BoardProps {
   boardName: string;
   initialNotes: Note[];
   initialConnections: Connection[];
+  initialChat: ChatSnapshot;
   /** True the first time this user opens the board through a share link. */
   justJoined: boolean;
   currentUser: CurrentUser;
@@ -44,10 +49,13 @@ export interface BoardProps {
 
 const ZOOM_STEP = 1.25;
 
-/** Space taken by the sidebar rail, toolbar and bottom panels when fitting notes. */
-const fitInsets = (viewport: Size, mapOpen: boolean) => ({
+/** Width the chat panel covers on the right (22rem + margins), on screens wider than a phone. */
+const CHAT_WIDTH = 384;
+
+/** Space taken by the sidebar rail, toolbar, chat and bottom panels when fitting notes. */
+const fitInsets = (viewport: Size, mapOpen: boolean, chatOpen = false) => ({
   top: 80,
-  right: 32,
+  right: chatOpen && viewport.width >= 640 ? CHAT_WIDTH + 24 : 32,
   bottom: navigatorPanelHeight(viewport, mapOpen) + 24,
   left: 88,
 });
@@ -67,6 +75,7 @@ export default function Board({
   boardName,
   initialNotes,
   initialConnections,
+  initialChat,
   justJoined,
   currentUser,
 }: BoardProps) {
@@ -159,7 +168,17 @@ export default function Board({
   const [mode, setMode] = useState<CanvasMode>("pan");
   const [modal, setModal] = useState<{ note: Note | null; at: Point } | null>(null);
 
+  // Chat
+  const chat = useBoardChat(boardId, currentUser.id, initialChat);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatAttachment, setChatAttachment] = useState<string | null>(null);
+  const [pickingNote, setPickingNote] = useState(false);
+  const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(highlightTimer.current), []);
+
   // Notes can disappear (deleted by someone else); never keep them selected.
+  const notesById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
   const liveSelection = useMemo(() => {
     const ids = new Set(notes.map((note) => note.id));
     return selection.filter((id) => ids.has(id));
@@ -310,11 +329,44 @@ export default function Board({
     const bounds = notesBounds(notes);
     if (!bounds) return;
     const target = fitRect(bounds, viewport, {
-      insets: fitInsets(viewport, mapOpen),
+      insets: fitInsets(viewport, mapOpen, chatOpen),
       maxZoom: 1.5,
     });
     animateCamera(target, viewport, 320);
-  }, [animateCamera, notes, viewport, mapOpen]);
+  }, [animateCamera, notes, viewport, mapOpen, chatOpen]);
+
+  /** Fly to a note (e.g. from a chat message) and flash it. */
+  const showNote = useCallback(
+    (noteId: string) => {
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) {
+        toast("That note has been deleted");
+        return;
+      }
+      const isPhone = viewport.width < 640;
+      if (isPhone) setChatOpen(false); // the chat covers the whole board on phones
+      const zoom = Math.min(Math.max(cameraRef.current.zoom, 0.9), 1.25);
+      const target = fitRect(padRect(noteRect(note), 40), viewport, {
+        insets: fitInsets(viewport, mapOpen, chatOpen && !isPhone),
+        maxZoom: zoom,
+      });
+      animateCamera(target, viewport, 420);
+      setHighlightedNoteId(noteId);
+      clearTimeout(highlightTimer.current);
+      highlightTimer.current = setTimeout(() => setHighlightedNoteId(null), 2600);
+    },
+    [notes, viewport, mapOpen, chatOpen, animateCamera, cameraRef]
+  );
+
+  /** Pin button in the chat: use the selected note, or let the user click one. */
+  const attachNoteToChat = () => {
+    if (liveSelection.length === 1) {
+      setChatAttachment(liveSelection[0]);
+      setPickingNote(false);
+    } else {
+      setPickingNote((picking) => !picking);
+    }
+  };
 
   const share = () => {
     navigator.clipboard.writeText(`${window.location.origin}/boards/${boardId}`);
@@ -370,6 +422,11 @@ export default function Board({
         case "Escape":
           setSelection([]);
           setSelectedConnectionId(null);
+          setPickingNote(false);
+          return;
+        case "c":
+        case "C":
+          setChatOpen((open) => !open);
           return;
         case "Delete":
         case "Backspace":
@@ -449,10 +506,21 @@ export default function Board({
         onMoveNotes={moveNotes}
         onBringToFront={bringToFront}
         onOpenNote={(id) => {
+          if (pickingNote) {
+            // Attaching a note to a chat message instead of editing it.
+            setChatAttachment(id);
+            setPickingNote(false);
+            setChatOpen(true);
+            return;
+          }
           const note = notes.find((n) => n.id === id);
           if (note) setModal({ note, at: { x: note.x, y: note.y } });
         }}
-        onCreateNote={(at) => setModal({ note: null, at })}
+        onCreateNote={(at) => {
+          if (pickingNote) setPickingNote(false);
+          else setModal({ note: null, at });
+        }}
+        highlightedNoteId={highlightedNoteId}
         onPointerWorldMove={sendCursor}
         onDragEnd={handleDragEnd}
         remoteMoving={remoteMoving}
@@ -484,9 +552,45 @@ export default function Board({
         onModeChange={setMode}
         onShare={share}
         sessions={sessions}
+        chatOpen={chatOpen}
+        unreadCount={chat.unreadCount}
+        onToggleChat={() => setChatOpen((open) => !open)}
       />
 
+      {pickingNote && (
+        <div className="pointer-events-none fixed left-1/2 top-20 z-40 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg animate-in fade-in-0 slide-in-from-top-2">
+          Click a note to pin it to your message · Esc to cancel
+        </div>
+      )}
+
+      {chatOpen && (
+        <ChatPanel
+          myId={currentUser.id}
+          messages={chat.messages}
+          profiles={chat.profiles}
+          reads={chat.reads}
+          notesById={notesById}
+          unreadCount={chat.unreadCount}
+          onSend={chat.send}
+          onEdit={chat.edit}
+          onDelete={(id) => void chat.remove(id)}
+          onMarkRead={chat.markRead}
+          onShowNote={showNote}
+          onClose={() => {
+            setChatOpen(false);
+            setPickingNote(false);
+          }}
+          attachment={chatAttachment}
+          onAttach={attachNoteToChat}
+          onClearAttachment={() => setChatAttachment(null)}
+          picking={pickingNote}
+          onCancelPicking={() => setPickingNote(false)}
+        />
+      )}
+
       <SelectionBar
+        // Center in the space left of the open chat panel.
+        className={chatOpen ? "sm:left-[calc(50%-12rem)]" : undefined}
         count={liveSelection.length}
         onColor={(color) => colorNotes(liveSelection, color)}
         onDelete={() => deleteNotes(liveSelection)}
@@ -494,6 +598,7 @@ export default function Board({
       />
 
       <NavigatorPanel
+        className={chatOpen ? "sm:right-[24rem]" : undefined}
         open={mapOpen}
         onOpenChange={setMapOpen}
         notes={notes}
@@ -520,6 +625,15 @@ export default function Board({
             : undefined
         }
         initialData={modal?.note ?? null}
+        onDiscuss={
+          modal?.note
+            ? () => {
+                setChatAttachment(modal.note!.id);
+                setChatOpen(true);
+                setModal(null);
+              }
+            : undefined
+        }
       />
     </>
   );
