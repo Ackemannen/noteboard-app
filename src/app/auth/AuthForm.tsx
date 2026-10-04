@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -129,9 +130,12 @@ export default function AuthForm({
           <ArrowLeft />
         </Link>
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-            {isSignUp ? "Create an account" : "Sign in to your account"}
-          </h1>
+          <div className="flex items-center gap-3">
+            <Logo size={40} priority />
+            <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
+              {isSignUp ? "Create an account" : "Sign in to your account"}
+            </h1>
+          </div>
 
           <Button
             type="button"

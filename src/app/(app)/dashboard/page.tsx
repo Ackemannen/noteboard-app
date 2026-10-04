@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Logo from "@/components/Logo";
 import { createClient, getUser } from "@/lib/supabase/server";
 import BoardList, { type BoardSummary } from "./BoardList";
 import CreateBoardForm from "./CreateBoardForm";
@@ -46,7 +47,10 @@ export default async function DashboardPage() {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-blue-600">Collaboard</p>
+            <p className="flex items-center gap-2 text-sm font-medium text-blue-600">
+              <Logo size={22} />
+              Collaboard
+            </p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
               Welcome back{firstName ? `, ${firstName}` : ""}
             </h1>

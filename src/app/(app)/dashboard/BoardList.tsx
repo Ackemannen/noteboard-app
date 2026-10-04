@@ -76,7 +76,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
   return (
     <section className="mt-10">
       {/* Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex self-start rounded-xl border border-black/5 bg-white p-1 shadow-sm" role="tablist">
           {FILTERS.map(({ value, label }) => (
             <button
@@ -94,7 +94,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
           ))}
         </div>
         <div className="flex gap-2">
-          <label className="relative flex-1 sm:w-64 sm:flex-none">
+          <label className="relative flex-1 md:w-64 md:flex-none">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
             <input
               type="search"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, LogOut, Users } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
+import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { boardAccent, initials } from "@/lib/board-style";
 import { cn } from "@/lib/utils";
@@ -91,9 +92,7 @@ export default function Sidebar({
         aria-expanded={expanded}
         aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
       >
-        <span className="grid size-9 shrink-0 rotate-[-4deg] place-items-center rounded-lg bg-yellow-300 text-base font-black text-yellow-900 shadow-sm ring-1 ring-yellow-400/60">
-          C
-        </span>
+        <Logo size={36} priority />
         <Label expanded={expanded} className="text-lg font-bold text-blue-600">
           Collaboard
         </Label>
