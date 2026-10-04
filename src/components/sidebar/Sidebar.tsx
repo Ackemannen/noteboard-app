@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, LogOut, Users } from "lucide-react";
+import { LayoutGrid, LogOut, Monitor, Moon, Sun, Users } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { boardAccent, initials } from "@/lib/board-style";
+import { useTheme, type ThemePreference } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export type SidebarBoard = { id: string; name: string; isOwner: boolean };
@@ -71,7 +72,7 @@ export default function Sidebar({
       ref={asideRef}
       aria-label="Main navigation"
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden border-r border-black/5 bg-white/95 backdrop-blur-md transition-[width,box-shadow] duration-200 ease-out",
+        "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden border-r border-border bg-card/95 backdrop-blur-md transition-[width,box-shadow] duration-200 ease-out",
         expanded ? "w-64 shadow-2xl" : "w-14 shadow-sm"
       )}
       onPointerEnter={(e) => e.pointerType === "mouse" && setHoveredLater(true)}
@@ -111,7 +112,7 @@ export default function Sidebar({
         <div className="mt-2 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-2 [scrollbar-width:thin]">
           <SectionHeading expanded={expanded}>Your boards</SectionHeading>
           {owned.length === 0 && expanded && (
-            <p className="px-2.5 py-1 text-xs text-gray-400">No boards yet</p>
+            <p className="px-2.5 py-1 text-xs text-muted-foreground">No boards yet</p>
           )}
           {owned.map((board) => (
             <BoardItem
@@ -142,22 +143,24 @@ export default function Sidebar({
         </div>
       </nav>
 
+      <ThemeSwitcher expanded={expanded} />
+
       {/* Account */}
-      <div className="flex shrink-0 items-center gap-3 border-t border-black/5 px-2.5 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-t border-border px-2.5 py-3">
         <UserAvatar {...user} />
         <Label expanded={expanded} className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-gray-900">
+          <span className="block truncate text-sm font-medium text-foreground">
             {user.name ?? user.email?.split("@")[0] ?? "You"}
           </span>
           {user.email && (
-            <span className="block truncate text-xs text-gray-500">{user.email}</span>
+            <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
           )}
         </Label>
         <form action={signOut} className={cn("transition-opacity", !expanded && "pointer-events-none opacity-0")}>
           <button
             type="submit"
             tabIndex={expanded ? 0 : -1}
-            className="grid size-8 place-items-center rounded-lg text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 dark:hover:bg-red-500/15 hover:text-red-600 dark:hover:text-red-400"
             title="Log out"
             aria-label="Log out"
           >
@@ -205,13 +208,13 @@ function SectionHeading({
       {/* Collapsed: a short divider instead of the heading */}
       <div
         className={cn(
-          "absolute left-3 right-auto h-px w-6 bg-gray-200 transition-opacity",
+          "absolute left-3 right-auto h-px w-6 bg-border transition-opacity",
           expanded ? "opacity-0" : "opacity-100"
         )}
       />
       <Label
         expanded={expanded}
-        className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400"
+        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
       >
         {icon}
         {children}
@@ -243,7 +246,7 @@ function NavItem({
       title={expanded ? undefined : label}
       className={cn(
         "flex h-10 items-center gap-3 rounded-lg px-2 transition-colors",
-        active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        active ? "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" : "text-foreground/75 hover:bg-muted hover:text-foreground"
       )}
     >
       <span className="grid size-6 shrink-0 place-items-center">{icon}</span>
@@ -273,14 +276,14 @@ function BoardItem({
       title={expanded ? undefined : board.name}
       className={cn(
         "group flex h-9 items-center gap-3 rounded-lg px-1.5 transition-colors",
-        active ? "bg-blue-50" : "hover:bg-gray-100"
+        active ? "bg-blue-50 dark:bg-blue-500/15" : "hover:bg-muted"
       )}
     >
       <span
         className={cn(
           "grid size-7 shrink-0 place-items-center rounded-md text-[10px] font-bold shadow-sm transition-transform group-hover:rotate-[-3deg]",
           boardAccent(board.id),
-          active && "ring-2 ring-blue-500 ring-offset-1"
+          active && "ring-2 ring-blue-500 ring-offset-1 ring-offset-card"
         )}
       >
         {initials(board.name)}
@@ -289,11 +292,72 @@ function BoardItem({
         expanded={expanded}
         className={cn(
           "min-w-0 truncate text-sm",
-          active ? "font-semibold text-blue-700" : "text-gray-700"
+          active ? "font-semibold text-blue-700 dark:text-blue-300" : "text-foreground/80"
         )}
       >
         {board.name}
       </Label>
     </Link>
+  );
+}
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
+  { value: "system", label: "System", Icon: Monitor },
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "dark", label: "Dark", Icon: Moon },
+];
+
+/**
+ * Theme control above the account row: a 3-way switch when the sidebar is
+ * open, a single button that cycles through the options in the slim rail.
+ */
+function ThemeSwitcher({ expanded }: { expanded: boolean }) {
+  const { preference, setPreference } = useTheme();
+  const current = THEME_OPTIONS.find((option) => option.value === preference)!;
+
+  if (!expanded) {
+    const next = THEME_OPTIONS[(THEME_OPTIONS.indexOf(current) + 1) % THEME_OPTIONS.length];
+    return (
+      <div className="shrink-0 px-2 pb-2">
+        <button
+          type="button"
+          onClick={() => setPreference(next.value)}
+          title={`Theme: ${current.label} (switch to ${next.label.toLowerCase()})`}
+          aria-label={`Theme: ${current.label}. Switch to ${next.label}`}
+          className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <current.Icon className="size-[18px]" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="shrink-0 px-2 pb-2">
+      <div
+        role="radiogroup"
+        aria-label="Theme"
+        className="grid grid-cols-3 gap-0.5 rounded-xl bg-muted p-1"
+      >
+        {THEME_OPTIONS.map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={preference === value}
+            onClick={() => setPreference(value)}
+            className={cn(
+              "flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-xs font-medium transition-colors",
+              preference === value
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Icon className="size-3.5 shrink-0" />
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

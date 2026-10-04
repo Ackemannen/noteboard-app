@@ -1,0 +1,8 @@
+#!/bin/sh
+# Block the push if the production build fails (type errors included).
+# Skip once with: git push --no-verify
+echo "pre-push: building the app before pushing..."
+if ! npm run build; then
+  echo "pre-push: build failed, push aborted." >&2
+  exit 1
+fi

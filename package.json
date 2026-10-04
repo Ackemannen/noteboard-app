@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "prepare": "git config core.hooksPath .githooks",
     "typecheck": "tsc --noEmit",
     "db:login": "supabase login",
     "db:link": "supabase link",

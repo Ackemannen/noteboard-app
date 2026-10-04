@@ -1,0 +1,2 @@
+# Shell hooks must keep LF endings to run on macOS/Linux
+.githooks/* text eol=lf

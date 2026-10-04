@@ -150,7 +150,7 @@ const NoteModal: React.FC<NoteModalProps> = ({
         </div>
 
         {/* Tray: palette + actions */}
-        <div className="rounded-2xl bg-white/95 p-3 shadow-xl ring-1 ring-black/5">
+        <div className="rounded-2xl bg-card/95 p-3 shadow-xl ring-1 ring-border">
           <div role="radiogroup" aria-label="Note color" className="grid grid-cols-10 gap-1.5">
             {(Object.keys(NOTE_COLORS) as NoteColor[]).map((key) => {
               const selected = color === key;
@@ -166,7 +166,7 @@ const NoteModal: React.FC<NoteModalProps> = ({
                   className={cn(
                     "grid aspect-square place-items-center rounded-md border transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
                     NOTE_COLORS[key].className,
-                    selected && "ring-2 ring-stone-900 ring-offset-2"
+                    selected && "ring-2 ring-foreground ring-offset-2 ring-offset-card"
                   )}
                 >
                   {selected && <Check className="size-3.5 text-black/60" strokeWidth={3} />}
@@ -175,25 +175,25 @@ const NoteModal: React.FC<NoteModalProps> = ({
             })}
           </div>
 
-          <div className="mt-3 flex items-center gap-1 border-t border-stone-100 pt-3">
+          <div className="mt-3 flex items-center gap-1 border-t border-border pt-3">
             {onDelete && (
               <button
                 type="button"
                 onClick={onDelete}
-                className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-[0.98]"
+                className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-[0.98] dark:text-red-400 dark:hover:bg-red-500/15"
               >
                 <Trash2 className="size-4" />
                 Delete
               </button>
             )}
-            <span className="ml-auto mr-1 hidden text-xs text-stone-400 sm:inline">
+            <span className="ml-auto mr-1 hidden text-xs text-muted-foreground sm:inline">
               <kbd className="font-sans">Ctrl</kbd> + <kbd className="font-sans">Enter</kbd>
             </span>
             <button
               type="button"
               onClick={onClose}
               className={cn(
-                "h-9 rounded-lg px-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 active:scale-[0.98]",
+                "h-9 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-[0.98]",
                 !onDelete && "max-sm:ml-auto"
               )}
             >

@@ -18,7 +18,7 @@ export default function UserAvatar({ name, email, avatarUrl, className }: UserAv
         src={avatarUrl}
         alt=""
         referrerPolicy="no-referrer"
-        className={cn("size-9 shrink-0 rounded-full object-cover ring-2 ring-white", className)}
+        className={cn("size-9 shrink-0 rounded-full object-cover ring-2 ring-card", className)}
       />
     );
   }
@@ -27,7 +27,7 @@ export default function UserAvatar({ name, email, avatarUrl, className }: UserAv
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white ring-2 ring-white",
+        "grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white ring-2 ring-card",
         className
       )}
     >

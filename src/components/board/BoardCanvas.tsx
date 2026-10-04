@@ -466,6 +466,8 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       onPointerLeave={() => latest.current.onPointerWorldMove?.(null)}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {/* Dark mode dims the cork (not the notes, which sit above this layer) */}
+      <div className="pointer-events-none absolute inset-0 hidden bg-stone-950/50 dark:block" />
       {/* Soft vignette for depth */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(60,30,0,0.25))]" />
 

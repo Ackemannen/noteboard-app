@@ -47,7 +47,7 @@ interface NavigatorPanelProps {
 }
 
 const iconButton =
-  "grid size-8 place-items-center rounded-md text-gray-700 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-40";
+  "grid size-8 place-items-center rounded-md text-foreground/80 transition-colors hover:bg-muted active:bg-border disabled:opacity-40";
 
 export default function NavigatorPanel({
   open,
@@ -69,7 +69,7 @@ export default function NavigatorPanel({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 rounded-xl border border-black/5 bg-white/90 p-1.5 shadow-lg backdrop-blur-sm">
+    <div className="fixed bottom-4 right-4 z-40 rounded-xl border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur-sm">
       {open && (
         <div className="mb-1.5">
           <Minimap
@@ -87,7 +87,7 @@ export default function NavigatorPanel({
           <Minus className="size-4" />
         </button>
         <button
-          className="h-8 min-w-14 rounded-md px-1.5 text-xs font-medium tabular-nums text-gray-700 hover:bg-gray-100"
+          className="h-8 min-w-14 rounded-md px-1.5 text-xs font-medium tabular-nums text-foreground/80 hover:bg-muted"
           onClick={onResetZoom}
           title="Reset to 100% (0)"
         >
@@ -96,7 +96,7 @@ export default function NavigatorPanel({
         <button className={iconButton} onClick={onZoomIn} title="Zoom in (+)">
           <Plus className="size-4" />
         </button>
-        <div className="mx-1 h-5 w-px bg-gray-200" />
+        <div className="mx-1 h-5 w-px bg-border" />
         <button
           className={iconButton}
           onClick={onFit}
@@ -106,7 +106,7 @@ export default function NavigatorPanel({
           <Maximize className="size-4" />
         </button>
         <button
-          className={cn(iconButton, open && "bg-blue-50 text-blue-600 hover:bg-blue-100")}
+          className={cn(iconButton, open && "bg-blue-50 dark:bg-blue-500/15 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-500/25")}
           onClick={toggle}
           title={open ? "Hide map" : "Show map"}
           aria-pressed={open}

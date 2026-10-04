@@ -318,7 +318,7 @@ export default function Board({
 
   const share = () => {
     navigator.clipboard.writeText(`${window.location.origin}/boards/${boardId}`);
-    toast.success("Share link copied to clipboard!");
+    toast.success("Share link copied");
   };
 
   // ---------------------------------------------------------------------------

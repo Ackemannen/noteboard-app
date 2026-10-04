@@ -32,6 +32,7 @@ export default function BoardThumbnail({
       style={{ backgroundImage: "url(/cork.webp)", backgroundSize: "512px 340px" }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(60,30,0,0.25))]" />
+      <div className="absolute inset-0 hidden bg-stone-950/50 dark:block" />
       {viewBox ? (
         <svg
           className="absolute inset-0 h-full w-full drop-shadow-[0_2px_2px_rgba(0,0,0,0.25)]"
@@ -56,7 +57,7 @@ export default function BoardThumbnail({
         </svg>
       ) : (
         <div className="absolute inset-0 grid place-items-center">
-          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-amber-900/80">
+          <span className="rounded-full bg-card/80 px-3 py-1 text-xs font-medium text-amber-900/80">
             Empty board
           </span>
         </div>

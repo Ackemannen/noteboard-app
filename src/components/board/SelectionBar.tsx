@@ -16,11 +16,11 @@ export default function SelectionBar({ count, onColor, onDelete, onClear }: Sele
   if (count === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-black/5 bg-white/95 p-1.5 pl-3 max-w-[calc(100vw-2rem)] overflow-x-auto shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]">
-      <span className="mr-1 whitespace-nowrap text-sm font-medium text-gray-800">
+    <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-card/95 p-1.5 pl-3 max-w-[calc(100vw-2rem)] overflow-x-auto shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]">
+      <span className="mr-1 whitespace-nowrap text-sm font-medium text-foreground">
         {count} selected
       </span>
-      <div className="mx-1 h-5 w-px bg-gray-200" />
+      <div className="mx-1 h-5 w-px bg-border" />
       {(Object.keys(NOTE_COLORS) as NoteColor[]).map((color) => (
         <button
           key={color}
@@ -32,10 +32,10 @@ export default function SelectionBar({ count, onColor, onDelete, onClear }: Sele
           )}
         />
       ))}
-      <div className="mx-1 h-5 w-px bg-gray-200" />
+      <div className="mx-1 h-5 w-px bg-border" />
       <button
         onClick={onDelete}
-        className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-red-600 hover:bg-red-50"
+        className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15"
         title="Delete selected (Delete)"
       >
         <Trash2 className="size-4" />
@@ -43,7 +43,7 @@ export default function SelectionBar({ count, onColor, onDelete, onClear }: Sele
       </button>
       <button
         onClick={onClear}
-        className="grid size-8 place-items-center rounded-lg text-gray-500 hover:bg-gray-100"
+        className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
         title="Clear selection (Esc)"
       >
         <X className="size-4" />

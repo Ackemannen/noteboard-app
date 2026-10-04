@@ -14,7 +14,7 @@ import {
 } from "@/lib/connections";
 
 const THREAD = "#b91c1c";
-const ARROW = "#292524";
+const ARROW = "var(--arrow-ink)"; // dark ink, light in dark mode (globals.css)
 const SHADOW = "rgba(60, 25, 0, 0.3)";
 
 /** A connection being drawn: from a note to the pointer (or a hovered target note). */
@@ -167,7 +167,7 @@ const ConnectionsLayer = memo(function ConnectionsLayer({
           onClick={() => onDelete(selected.connection.id)}
           title={`Remove ${selected.connection.kind} (Delete)`}
           aria-label={`Remove ${selected.connection.kind}`}
-          className="absolute grid size-8 place-items-center rounded-full bg-white text-red-600 shadow-lg ring-1 ring-black/10 transition-colors hover:bg-red-50"
+          className="absolute grid size-8 place-items-center rounded-full bg-card text-red-600 shadow-lg ring-1 ring-border transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
           style={{
             left: selected.shape.mid.x,
             top: selected.shape.mid.y,

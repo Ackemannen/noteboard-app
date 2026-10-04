@@ -21,7 +21,7 @@ export default function CreateBoardForm() {
         toast.error(result.error);
         return;
       }
-      toast.success("Board created!");
+      toast.success("Board created");
       setName("");
       router.push(`/boards/${result.data.id}`);
     });
@@ -30,7 +30,7 @@ export default function CreateBoardForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full gap-2 rounded-2xl border border-black/5 bg-white p-2 shadow-sm lg:w-auto lg:min-w-[26rem]"
+      className="flex w-full gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm lg:w-auto lg:min-w-[26rem]"
     >
       <input
         type="text"
@@ -39,7 +39,7 @@ export default function CreateBoardForm() {
         placeholder="Name a new board…"
         aria-label="New board name"
         maxLength={100}
-        className="min-w-0 flex-1 rounded-xl px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:bg-gray-50"
+        className="min-w-0 flex-1 rounded-xl px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:bg-muted"
         disabled={isCreating}
       />
       <button

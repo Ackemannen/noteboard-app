@@ -26,7 +26,7 @@ function timeAgo(iso: string) {
 }
 
 const actionButton =
-  "grid size-8 place-items-center rounded-lg bg-white/90 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white";
+  "grid size-8 place-items-center rounded-lg bg-card/90 text-foreground/80 shadow-sm backdrop-blur-sm transition-colors hover:bg-card";
 
 interface BoardCardProps {
   board: BoardSummary;
@@ -60,7 +60,7 @@ export default function BoardCard({ board, onShare, onRename, onRemove }: BoardC
   };
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+    <article className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
       <Link href={href} className="block outline-none" aria-label={`Open ${board.name}`} tabIndex={-1}>
         <BoardThumbnail
           notes={board.previewNotes}
@@ -69,7 +69,7 @@ export default function BoardCard({ board, onShare, onRename, onRemove }: BoardC
       </Link>
 
       {!board.isOwner && (
-        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm backdrop-blur-sm">
+        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur-sm">
           <Users className="size-3" /> Shared with you
         </span>
       )}
@@ -86,7 +86,7 @@ export default function BoardCard({ board, onShare, onRename, onRemove }: BoardC
         )}
         <button
           onClick={onRemove}
-          className={cn(actionButton, "text-red-600 hover:bg-red-50")}
+          className={cn(actionButton, "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15")}
           title={board.isOwner ? "Delete board" : "Leave board"}
           aria-label={board.isOwner ? "Delete board" : "Leave board"}
         >
@@ -109,10 +109,10 @@ export default function BoardCard({ board, onShare, onRename, onRemove }: BoardC
               if (e.key === "Escape") setIsEditing(false);
             }}
             aria-label="Board name"
-            className="-mx-1.5 -my-1 w-[calc(100%+0.75rem)] rounded-md border border-blue-400 px-1.5 py-1 font-semibold text-gray-900 outline-none ring-2 ring-blue-100"
+            className="-mx-1.5 -my-1 w-[calc(100%+0.75rem)] rounded-md border border-blue-400 px-1.5 py-1 font-semibold text-foreground outline-none ring-2 ring-blue-100"
           />
         ) : (
-          <h3 className="truncate font-semibold text-gray-900">
+          <h3 className="truncate font-semibold text-foreground">
             <Link
               href={href}
               className="rounded outline-none after:absolute after:inset-x-0 after:bottom-0 after:top-40 focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -127,7 +127,7 @@ export default function BoardCard({ board, onShare, onRename, onRemove }: BoardC
           </h3>
         )}
 
-        <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1" title={`${board.noteCount} notes`}>
             <StickyNote className="size-3.5" /> {board.noteCount}
           </span>

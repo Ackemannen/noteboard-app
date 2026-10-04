@@ -46,12 +46,12 @@ export default function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95"
+        className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl animate-in zoom-in-95"
       >
-        <h2 id="confirm-title" className="text-lg font-semibold text-gray-900">
+        <h2 id="confirm-title" className="text-lg font-semibold text-foreground">
           {title}
         </h2>
-        <div className="mt-2 text-sm text-gray-600">{description}</div>
+        <div className="mt-2 text-sm text-foreground/75">{description}</div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={pending}>
             Cancel

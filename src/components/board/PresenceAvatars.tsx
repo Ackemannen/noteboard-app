@@ -61,14 +61,14 @@ export default function PresenceAvatars({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         title={`${users.length} on this board`}
-        className={cn("gap-2 pl-2 pr-3 hover:bg-white", className)}
+        className={cn("gap-2 pl-2 pr-3 hover:bg-card", className)}
       >
         <span className="flex -space-x-2">
           {shown.map((user) => (
             <span
               key={user.userId}
               className="rounded-full"
-              style={{ boxShadow: `0 0 0 2px white, 0 0 0 4px ${user.color}` }}
+              style={{ boxShadow: `0 0 0 2px var(--card), 0 0 0 4px ${user.color}` }}
             >
               <UserAvatar
                 name={user.name}
@@ -79,15 +79,15 @@ export default function PresenceAvatars({
             </span>
           ))}
         </span>
-        <span className="flex items-center gap-1 text-xs font-semibold text-gray-700">
+        <span className="flex items-center gap-1 text-xs font-semibold text-foreground/80">
           <Users className="size-3.5" />
           {countLabel}
         </span>
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-black/5 bg-white/95 p-3 shadow-xl backdrop-blur-sm">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <div className="absolute left-0 top-full mt-2 w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-border bg-card/95 p-3 shadow-xl backdrop-blur-sm">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             On this board · {users.length}
           </h2>
           <ul className="max-h-72 space-y-1 overflow-y-auto">
@@ -99,9 +99,9 @@ export default function PresenceAvatars({
                   avatarUrl={user.avatarUrl}
                   className="size-7 ring-0"
                 />
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-800">
+                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                   {user.name}
-                  {user.isYou && <span className="text-gray-400"> (you)</span>}
+                  {user.isYou && <span className="text-muted-foreground"> (you)</span>}
                 </span>
                 <span
                   className="size-2.5 shrink-0 rounded-full"

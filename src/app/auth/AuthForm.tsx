@@ -123,7 +123,7 @@ export default function AuthForm({
   };
 
   return (
-    <div className="flex flex-col h-screen items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0 relative">
+    <div className="relative mx-auto flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#fef3c7_0%,transparent_55%)] px-6 py-8 dark:bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.1)_0%,transparent_55%)]">
       <div className="w-full bg-yellow-200 border-yellow-300 rounded-lg shadow-2xl md:mt-0 sm:max-w-md xl:p-0 relative z-10 rotate-1">
         <div className="transform -translate-y-1/2 w-26 h-8 m-auto bg-white/60 rounded-sm shadow-sm border border-gray-200"></div>
         <Link href="/" className="absolute top-4 left-4" aria-label="Back">
@@ -142,7 +142,7 @@ export default function AuthForm({
             variant="outline"
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full bg-white cursor-pointer"
+            className="w-full cursor-pointer border-black/10 bg-white text-gray-900 hover:bg-gray-50 hover:text-gray-900"
           >
             <GoogleIcon />
             Continue with Google
@@ -243,7 +243,7 @@ export default function AuthForm({
             <Button
               type="submit"
               disabled={loading}
-              className="w-full text-white bg-green-400 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center cursor-pointer disabled:opacity-50"
+              className="w-full cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
             >
               {loading
                 ? isSignUp

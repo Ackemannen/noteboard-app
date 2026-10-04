@@ -50,7 +50,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
 
   const copyShareLink = (boardId: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/boards/${boardId}`);
-    toast.success("Share link copied to clipboard!");
+    toast.success("Share link copied");
   };
 
   const handleRename = async (board: BoardSummary, name: string) => {
@@ -77,7 +77,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
     <section className="mt-10">
       {/* Controls */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex self-start rounded-xl border border-black/5 bg-white p-1 shadow-sm" role="tablist">
+        <div className="flex self-start rounded-xl border border-border bg-card p-1 shadow-sm" role="tablist">
           {FILTERS.map(({ value, label }) => (
             <button
               key={value}
@@ -86,7 +86,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
               onClick={() => setFilter(value)}
               className={cn(
                 "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === value ? "bg-gray-900 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
+                filter === value ? "bg-foreground text-background shadow-sm" : "text-foreground/75 hover:bg-muted"
               )}
             >
               {label}
@@ -95,21 +95,21 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
         </div>
         <div className="flex gap-2">
           <label className="relative flex-1 md:w-64 md:flex-none">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search boards"
               aria-label="Search boards"
-              className="h-10 w-full rounded-xl border border-black/5 bg-white pl-9 pr-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </label>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as Sort)}
             aria-label="Sort boards"
-            className="h-10 rounded-xl border border-black/5 bg-white px-3 text-sm text-gray-700 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="h-10 rounded-xl border border-border bg-card px-3 text-sm text-foreground/80 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="recent">Recently active</option>
             <option value="name">Name</option>
@@ -132,7 +132,7 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
           ))}
         </div>
       ) : (
-        <p className="mt-16 text-center text-sm text-gray-500">
+        <p className="mt-16 text-center text-sm text-muted-foreground">
           No boards match{query ? ` “${query}”` : " this filter"}.
         </p>
       )}
@@ -143,13 +143,13 @@ export default function BoardList({ boards }: { boards: BoardSummary[] }) {
         description={
           pendingRemoval?.isOwner ? (
             <>
-              <strong className="text-gray-900">{pendingRemoval.name}</strong> and all of its
+              <strong className="text-foreground">{pendingRemoval.name}</strong> and all of its
               notes will be deleted for everyone. This can’t be undone.
             </>
           ) : (
             <>
               You’ll lose access to{" "}
-              <strong className="text-gray-900">{pendingRemoval?.name}</strong>. You can rejoin
+              <strong className="text-foreground">{pendingRemoval?.name}</strong>. You can rejoin
               with its share link.
             </>
           )
@@ -174,8 +174,8 @@ function EmptyState() {
           <StickyNote className="size-8 text-yellow-700" />
         </div>
       </div>
-      <h2 className="mt-6 text-xl font-semibold text-gray-900">No boards yet</h2>
-      <p className="mt-2 max-w-sm text-gray-500">
+      <h2 className="mt-6 text-xl font-semibold text-foreground">No boards yet</h2>
+      <p className="mt-2 max-w-sm text-muted-foreground">
         Name your first board above. You can share it with a link so others can pin notes too.
       </p>
     </div>

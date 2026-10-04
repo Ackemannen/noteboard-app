@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   const firstName = user.name?.split(" ")[0] ?? user.email?.split("@")[0];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,#fef3c7_0%,transparent_45%),radial-gradient(ellipse_at_bottom_right,#dbeafe_0%,transparent_50%)] bg-slate-50 pl-14">
+    <div className="min-h-screen bg-background bg-[radial-gradient(ellipse_at_top_left,#fef3c7_0%,transparent_45%),radial-gradient(ellipse_at_bottom_right,#dbeafe_0%,transparent_50%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(245,158,11,0.09)_0%,transparent_45%),radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.1)_0%,transparent_50%)] pl-14">
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -51,10 +51,10 @@ export default async function DashboardPage() {
               <Logo size={22} />
               Collaboard
             </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Welcome back{firstName ? `, ${firstName}` : ""}
             </h1>
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-muted-foreground">
               {boards.length === 0
                 ? "Create your first board to start pinning ideas."
                 : `${ownedCount} ${ownedCount === 1 ? "board" : "boards"} of your own${

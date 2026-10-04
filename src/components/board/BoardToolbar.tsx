@@ -45,7 +45,7 @@ const SHORTCUTS: [string, string][] = [
 ];
 
 const shell =
-  "flex h-10 items-center rounded-xl border border-black/5 bg-white/90 shadow-lg backdrop-blur-sm";
+  "flex h-10 items-center rounded-xl border border-border bg-card/90 shadow-lg backdrop-blur-sm";
 
 export default function BoardToolbar({
   boardName,
@@ -83,7 +83,7 @@ export default function BoardToolbar({
         "grid size-8 place-items-center rounded-lg transition-colors",
         mode === value
           ? "bg-blue-600 text-white shadow-sm"
-          : "text-gray-600 hover:bg-gray-100"
+          : "text-foreground/75 hover:bg-muted"
       )}
     >
       <Icon className="size-4" />
@@ -93,10 +93,10 @@ export default function BoardToolbar({
   return (
     <div className="fixed left-[4.5rem] right-4 top-4 z-40 flex flex-wrap items-start gap-2 pointer-events-none [&>*]:pointer-events-auto">
       <div className={cn(shell, "min-w-0 max-w-[min(22rem,calc(100vw-6rem))] gap-2 px-3")}>
-        <h1 className="truncate text-sm font-semibold text-gray-900" title={boardName}>
+        <h1 className="truncate text-sm font-semibold text-foreground" title={boardName}>
           {boardName}
         </h1>
-        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+        <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
           {noteCount} {noteCount === 1 ? "note" : "notes"}
         </span>
       </div>
@@ -104,14 +104,14 @@ export default function BoardToolbar({
       <div className={cn(shell, "gap-0.5 px-1")} role="group" aria-label="Tool">
         {toolButton("pan", "Pan tool: drag to move around", Hand)}
         {toolButton("select", "Select tool: drag to select notes", SquareDashedMousePointer)}
-        <div className="mx-0.5 h-5 w-px bg-gray-200" />
+        <div className="mx-0.5 h-5 w-px bg-border" />
         {toolButton("thread", "Thread tool: drag between notes to pin a thread (T)", Spline)}
         {toolButton("arrow", "Arrow tool: drag from one note to another (A)", MoveUpRight)}
       </div>
 
       <button
         onClick={onShare}
-        className={cn(shell, "gap-2 px-3 text-sm font-medium text-gray-700 hover:bg-white")}
+        className={cn(shell, "gap-2 px-3 text-sm font-medium text-foreground/80 hover:bg-card")}
         title="Copy share link"
       >
         <LinkIcon className="size-4" />
@@ -124,19 +124,19 @@ export default function BoardToolbar({
       <div ref={helpRef}>
         <button
           onClick={() => setHelpOpen((open) => !open)}
-          className={cn(shell, "w-10 justify-center text-gray-700 hover:bg-white")}
+          className={cn(shell, "w-10 justify-center text-foreground/80 hover:bg-card")}
           title="How to use the board"
           aria-expanded={helpOpen}
         >
           <CircleHelp className="size-4" />
         </button>
         {helpOpen && (
-          <div className="absolute left-0 top-full mt-2 w-[min(22rem,calc(100vw-6rem))] rounded-xl border border-black/5 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+          <div className="absolute left-0 top-full mt-2 w-[min(22rem,calc(100vw-6rem))] rounded-xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-sm">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Using the board</h2>
+              <h2 className="text-sm font-semibold text-foreground">Using the board</h2>
               <button
                 onClick={() => setHelpOpen(false)}
-                className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
                 aria-label="Close"
               >
                 <X className="size-4" />
@@ -145,8 +145,8 @@ export default function BoardToolbar({
             <dl className="space-y-1.5 text-xs">
               {SHORTCUTS.map(([keys, action]) => (
                 <div key={keys} className="flex justify-between gap-4">
-                  <dt className="shrink-0 font-medium text-gray-800">{keys}</dt>
-                  <dd className="text-right text-gray-500">{action}</dd>
+                  <dt className="shrink-0 font-medium text-foreground">{keys}</dt>
+                  <dd className="text-right text-muted-foreground">{action}</dd>
                 </div>
               ))}
             </dl>
