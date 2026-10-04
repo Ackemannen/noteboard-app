@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CircleHelp, Hand, Link as LinkIcon, SquareDashedMousePointer, X } from "lucide-react";
+import {
+  CircleHelp,
+  Hand,
+  Link as LinkIcon,
+  MoveUpRight,
+  Spline,
+  SquareDashedMousePointer,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PresenceSession } from "@/hooks/useBoardPresence";
 import type { CanvasMode } from "./BoardCanvas";
@@ -31,7 +39,9 @@ const SHORTCUTS: [string, string][] = [
   ["Arrow keys", "Nudge selected notes (Shift = more)"],
   ["Ctrl/⌘ + A · Esc", "Select all · clear selection"],
   ["+ / − · 0 · F", "Zoom · 100% · fit all notes"],
-  ["H · V", "Pan tool · Select tool"],
+  ["Thread / Arrow tool", "Drag from one note to another to connect them"],
+  ["Click a thread or arrow", "Select it · Delete removes it"],
+  ["H · V · T · A", "Pan · Select · Thread · Arrow tool"],
 ];
 
 const shell =
@@ -94,6 +104,9 @@ export default function BoardToolbar({
       <div className={cn(shell, "gap-0.5 px-1")} role="group" aria-label="Tool">
         {toolButton("pan", "Pan tool: drag to move around", Hand)}
         {toolButton("select", "Select tool: drag to select notes", SquareDashedMousePointer)}
+        <div className="mx-0.5 h-5 w-px bg-gray-200" />
+        {toolButton("thread", "Thread tool: drag between notes to pin a thread (T)", Spline)}
+        {toolButton("arrow", "Arrow tool: drag from one note to another (A)", MoveUpRight)}
       </div>
 
       <button

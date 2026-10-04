@@ -176,5 +176,19 @@ export function useBoardNotes(boardId: string, initialNotes: Note[]) {
     setNotes((prev) => prev.map((note) => updates.get(note.id) ?? note));
   }, []);
 
-  return { notes, setNotes, saveNow, applyRemotePreview };
+  /** Put notes back (undo) and save them right away; resolves once saved. */
+  const restoreNotes = useCallback(
+    async (restored: Note[]) => {
+      const ids = new Set(restored.map((note) => note.id));
+      const merge = (list: Note[]) => [...list.filter((note) => !ids.has(note.id)), ...restored];
+      // Update the ref now so the immediate flush below sees the restored notes.
+      notesRef.current = merge(notesRef.current);
+      setNotes(merge);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      await flush();
+    },
+    [flush]
+  );
+
+  return { notes, setNotes, saveNow, applyRemotePreview, restoreNotes };
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { rowToNote } from "@/lib/notes";
+import { rowToConnection } from "@/lib/connections";
 import { createClient, getUser } from "@/lib/supabase/server";
 import BoardLoader from "./BoardLoader";
 
@@ -34,15 +35,26 @@ const loadBoard = cache(async (boardId: string) => {
   }
   if (!board) return null;
 
-  const { data: notes, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("board_id", boardId)
-    .order("z", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) console.error("Failed to load notes:", error);
+  const [notesResult, connectionsResult] = await Promise.all([
+    supabase
+      .from("notes")
+      .select("*")
+      .eq("board_id", boardId)
+      .order("z", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase.from("connections").select("*").eq("board_id", boardId),
+  ]);
+  if (notesResult.error) console.error("Failed to load notes:", notesResult.error);
+  if (connectionsResult.error) {
+    console.error("Failed to load connections:", connectionsResult.error);
+  }
 
-  return { board, notes: (notes ?? []).map(rowToNote), justJoined };
+  return {
+    board,
+    notes: (notesResult.data ?? []).map(rowToNote),
+    connections: (connectionsResult.data ?? []).map(rowToConnection),
+    justJoined,
+  };
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -69,6 +81,7 @@ export default async function BoardPage({ params }: Props) {
       boardId={id}
       boardName={result.board.name}
       initialNotes={result.notes}
+      initialConnections={result.connections}
       justJoined={result.justJoined}
       currentUser={{
         id: user.id,

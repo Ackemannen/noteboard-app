@@ -13,6 +13,8 @@ import NoteModal from "@/components/board/NoteModal";
 import SelectionBar from "@/components/board/SelectionBar";
 import RemoteCursors from "@/components/board/RemoteCursors";
 import { useBoardNotes } from "@/hooks/useBoardNotes";
+import { useBoardConnections } from "@/hooks/useBoardConnections";
+import type { Connection } from "@/lib/connections";
 import {
   useBoardPresence,
   type CurrentUser,
@@ -34,6 +36,7 @@ export interface BoardProps {
   boardId: string;
   boardName: string;
   initialNotes: Note[];
+  initialConnections: Connection[];
   /** True the first time this user opens the board through a share link. */
   justJoined: boolean;
   currentUser: CurrentUser;
@@ -63,14 +66,23 @@ export default function Board({
   boardId,
   boardName,
   initialNotes,
+  initialConnections,
   justJoined,
   currentUser,
 }: BoardProps) {
   const router = useRouter();
-  const { notes, setNotes, saveNow, applyRemotePreview } = useBoardNotes(
+  const { notes, setNotes, saveNow, applyRemotePreview, restoreNotes } = useBoardNotes(
     boardId,
     initialNotes
   );
+  const { connections, addConnection, removeConnections, dropLocal, restoreConnections } =
+    useBoardConnections(boardId, initialConnections);
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
+  // Only connections whose notes both exist (a note may have just been deleted).
+  const liveConnections = useMemo(() => {
+    const ids = new Set(notes.map((note) => note.id));
+    return connections.filter((c) => ids.has(c.fromId) && ids.has(c.toId));
+  }, [notes, connections]);
   const notesRef = useRef(notes);
   useLayoutEffect(() => {
     notesRef.current = notes;
@@ -215,21 +227,25 @@ export default function Board({
       if (ids.length === 0) return;
       const removedIds = new Set(ids);
       const removed = notes.filter((note) => removedIds.has(note.id));
+      // The database deletes their threads/arrows too; remember them for undo.
+      const attached = connections.filter(
+        (c) => removedIds.has(c.fromId) || removedIds.has(c.toId)
+      );
       setNotes((prev) => prev.filter((note) => !removedIds.has(note.id)));
+      dropLocal(attached.map((c) => c.id));
       setSelection((prev) => prev.filter((id) => !removedIds.has(id)));
       toast(`Deleted ${removed.length} ${removed.length === 1 ? "note" : "notes"}`, {
         duration: 8000,
         action: {
           label: "Undo",
-          onClick: () =>
-            setNotes((prev) => [
-              ...prev.filter((note) => !removedIds.has(note.id)),
-              ...removed,
-            ]),
+          onClick: async () => {
+            await restoreNotes(removed); // connections need their notes saved first
+            await restoreConnections(attached);
+          },
         },
       });
     },
-    [notes, setNotes]
+    [notes, setNotes, connections, dropLocal, restoreNotes, restoreConnections]
   );
 
   const colorNotes = useCallback(
@@ -310,6 +326,8 @@ export default function Board({
   // ---------------------------------------------------------------------------
   const shortcutState = useRef({
     modalOpen: false,
+    selectedConnectionId,
+    removeConnections,
     selection: liveSelection,
     notes,
     deleteNotes,
@@ -322,6 +340,8 @@ export default function Board({
   useLayoutEffect(() => {
     shortcutState.current = {
       modalOpen: modal !== null,
+      selectedConnectionId,
+      removeConnections,
       selection: liveSelection,
       notes,
       deleteNotes,
@@ -349,10 +369,15 @@ export default function Board({
       switch (e.key) {
         case "Escape":
           setSelection([]);
+          setSelectedConnectionId(null);
           return;
         case "Delete":
         case "Backspace":
-          if (s.selection.length) {
+          if (s.selectedConnectionId) {
+            e.preventDefault();
+            void s.removeConnections([s.selectedConnectionId]);
+            setSelectedConnectionId(null);
+          } else if (s.selection.length) {
             e.preventDefault();
             s.deleteNotes(s.selection);
           }
@@ -392,6 +417,14 @@ export default function Board({
         case "V":
           setMode("select");
           return;
+        case "t":
+        case "T":
+          setMode("thread");
+          return;
+        case "a":
+        case "A":
+          setMode("arrow");
+          return;
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -405,7 +438,10 @@ export default function Board({
       <BoardCanvas
         notes={sortedNotes}
         selection={liveSelection}
-        onSelectionChange={setSelection}
+        onSelectionChange={(ids) => {
+          setSelection(ids);
+          if (ids.length) setSelectedConnectionId(null);
+        }}
         camera={camera}
         cameraRef={cameraRef}
         onCameraChange={setCamera}
@@ -420,6 +456,24 @@ export default function Board({
         onPointerWorldMove={sendCursor}
         onDragEnd={handleDragEnd}
         remoteMoving={remoteMoving}
+        connections={liveConnections}
+        selectedConnectionId={selectedConnectionId}
+        onSelectConnection={setSelectedConnectionId}
+        onCreateConnection={(fromId, toId, kind) => {
+          const exists = connections.some(
+            (c) =>
+              c.kind === kind &&
+              ((c.fromId === fromId && c.toId === toId) ||
+                // A thread has no direction, so the reverse is the same thread.
+                (kind === "thread" && c.fromId === toId && c.toId === fromId))
+          );
+          if (exists) toast(`Those notes already have ${kind === "thread" ? "a thread" : "that arrow"}`);
+          else void addConnection(fromId, toId, kind);
+        }}
+        onDeleteConnection={(id) => {
+          void removeConnections([id]);
+          setSelectedConnectionId(null);
+        }}
         overlay={<RemoteCursors store={cursors} sessions={sessions} zoom={camera.zoom} />}
       />
 

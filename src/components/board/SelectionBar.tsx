@@ -16,7 +16,7 @@ export default function SelectionBar({ count, onColor, onDelete, onClear }: Sele
   if (count === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-black/5 bg-white/95 p-1.5 pl-3 shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]">
+    <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-black/5 bg-white/95 p-1.5 pl-3 max-w-[calc(100vw-2rem)] overflow-x-auto shadow-lg backdrop-blur-sm max-sm:bottom-[4.5rem]">
       <span className="mr-1 whitespace-nowrap text-sm font-medium text-gray-800">
         {count} selected
       </span>
@@ -27,7 +27,7 @@ export default function SelectionBar({ count, onColor, onDelete, onClear }: Sele
           onClick={() => onColor(color)}
           title={`Make ${NOTE_COLORS[color].label.toLowerCase()}`}
           className={cn(
-            "size-6 rounded-full border-2 transition-transform hover:scale-110",
+            "size-5 shrink-0 rounded-full border-2 transition-transform hover:scale-110",
             NOTE_COLORS[color].className
           )}
         />

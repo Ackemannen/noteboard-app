@@ -23,9 +23,15 @@ import {
   type Point,
   type Rect,
 } from "@/lib/board-geometry";
+import { noteAt, type Connection, type ConnectionKind } from "@/lib/connections";
+import ConnectionsLayer, { type ConnectionDraft } from "./ConnectionsLayer";
 import StickyNote from "./StickyNote";
 
-export type CanvasMode = "pan" | "select";
+/** Pan/select tools, or a connection tool that draws that kind of connection. */
+export type CanvasMode = "pan" | "select" | ConnectionKind;
+
+const isConnectMode = (mode: CanvasMode): mode is ConnectionKind =>
+  mode === "thread" || mode === "arrow";
 
 /** World size of one cork texture tile (the image is 1024×680). */
 const TILE = { width: 1024, height: 680 };
@@ -34,8 +40,22 @@ type Gesture =
   | { kind: "none" }
   /** Pressed on a note; becomes a drag (or a marquee with shift) once it moves. */
   | { kind: "pending-note"; pointerId: number; start: Point; noteId: string; shift: boolean }
-  /** Pressed on empty board; becomes a pan or marquee once it moves, else a click. */
-  | { kind: "pending-canvas"; pointerId: number; start: Point; shift: boolean }
+  /** Pressed on empty board (or a connection); becomes a pan or marquee once it moves, else a click. */
+  | {
+      kind: "pending-canvas";
+      pointerId: number;
+      start: Point;
+      shift: boolean;
+      connectionId: string | null;
+    }
+  /** Drawing a connection from a note with a connection tool. */
+  | {
+      kind: "connect";
+      pointerId: number;
+      start: Point;
+      fromId: string;
+      connectionKind: ConnectionKind;
+    }
   | { kind: "pan"; pointerId: number; last: Point }
   | {
       kind: "drag";
@@ -73,6 +93,11 @@ export interface BoardCanvasProps {
   onPointerWorldMove?: (world: Point | null) => void;
   /** Extra content drawn in the world layer above the notes (e.g. remote cursors). */
   overlay?: React.ReactNode;
+  connections: Connection[];
+  selectedConnectionId: string | null;
+  onSelectConnection: (id: string | null) => void;
+  onCreateConnection: (fromId: string, toId: string, kind: ConnectionKind) => void;
+  onDeleteConnection: (id: string) => void;
 }
 
 const dragThreshold = (pointerType: string) => (pointerType === "touch" ? 8 : 3);
@@ -90,12 +115,14 @@ export default function BoardCanvas(props: BoardCanvasProps) {
   const [liftedIds, setLiftedIds] = useState<ReadonlySet<string>>(new Set());
   const [isGrabbing, setIsGrabbing] = useState(false);
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  const [draft, setDraft] = useState<ConnectionDraft | null>(null);
 
   useLayoutEffect(() => {
     latest.current = props;
   });
 
   const selectedSet = useMemo(() => new Set(selection), [selection]);
+  const notesById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
 
   // ---------------------------------------------------------------------------
   // Helpers (read the latest props through the ref; safe inside event handlers)
@@ -164,6 +191,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
     gesture.current = { kind: "none" };
     if (wasDragging) latest.current.onDragEnd?.();
     setMarquee(null);
+    setDraft(null);
     setLiftedIds(new Set());
     setIsGrabbing(false);
   };
@@ -192,9 +220,20 @@ export default function BoardCanvas(props: BoardCanvasProps) {
     const wantsPan =
       e.button === 1 || spaceHeld.current || (e.ctrlKey && !noteEl);
 
+    const { mode, cameraRef } = latest.current;
     if (wantsPan) {
       e.preventDefault(); // no middle-click autoscroll
       startPan(e.pointerId, point);
+    } else if (noteEl && isConnectMode(mode)) {
+      const fromId = noteEl.dataset.noteId!;
+      gesture.current = {
+        kind: "connect",
+        pointerId: e.pointerId,
+        start: point,
+        fromId,
+        connectionKind: mode,
+      };
+      setDraft({ kind: mode, fromId, to: screenToWorld(point, cameraRef.current), toId: null });
     } else if (noteEl) {
       gesture.current = {
         kind: "pending-note",
@@ -209,6 +248,9 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         pointerId: e.pointerId,
         start: point,
         shift: e.shiftKey,
+        connectionId:
+          (e.target as Element).closest<SVGElement>("[data-connection-id]")?.dataset
+            .connectionId ?? null,
       };
     }
   };
@@ -257,6 +299,12 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         handlePointerMove(e); // apply this movement to the new gesture
         return;
       }
+      case "connect": {
+        const world = screenToWorld(point, cameraRef.current);
+        const target = noteAt(latest.current.notes, world, g.fromId);
+        setDraft({ kind: g.connectionKind, fromId: g.fromId, to: world, toId: target?.id ?? null });
+        return;
+      }
       case "pan": {
         const dx = point.x - g.last.x;
         const dy = point.y - g.last.y;
@@ -289,8 +337,16 @@ export default function BoardCanvas(props: BoardCanvasProps) {
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.delete(e.pointerId);
     const g = gesture.current;
-    const { selection, onSelectionChange, onOpenNote, onCreateNote, cameraRef } =
-      latest.current;
+    const {
+      selection,
+      onSelectionChange,
+      onOpenNote,
+      onCreateNote,
+      cameraRef,
+      selectedConnectionId,
+      onSelectConnection,
+      onCreateConnection,
+    } = latest.current;
 
     if (g.kind === "pinch") {
       // Keep panning with the finger that's still down.
@@ -313,8 +369,18 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         onOpenNote(g.noteId);
       }
     } else if (!cancelled && g.kind === "pending-canvas") {
-      if (selection.length > 0) onSelectionChange([]);
+      if (g.connectionId) {
+        onSelectionChange([]);
+        onSelectConnection(g.connectionId);
+      } else if (selectedConnectionId) onSelectConnection(null);
+      else if (selection.length > 0) onSelectionChange([]);
       else if (!g.shift) onCreateNote(screenToWorld(g.start, cameraRef.current));
+    } else if (!cancelled && g.kind === "connect") {
+      const point = localPoint(e);
+      const target = noteAt(latest.current.notes, screenToWorld(point, cameraRef.current), g.fromId);
+      if (target) onCreateConnection(g.fromId, target.id, g.connectionKind);
+      // A plain click with a connection tool still opens the note.
+      else if (distance(point, g.start) < dragThreshold(e.pointerType)) onOpenNote(g.fromId);
     }
 
     endGesture();
@@ -385,6 +451,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
           : isSpaceHeld || mode === "pan"
             ? "cursor-grab"
             : "cursor-crosshair",
+        isConnectMode(mode) && !isGrabbing && "[&_.sticky-note]:!cursor-crosshair",
         !isGrabbing && !isSpaceHeld && "[&_.sticky-note]:cursor-pointer"
       )}
       style={{
@@ -418,6 +485,14 @@ export default function BoardCanvas(props: BoardCanvasProps) {
             remoteColor={props.remoteMoving?.get(note.id)}
           />
         ))}
+        <ConnectionsLayer
+          notesById={notesById}
+          connections={props.connections}
+          selectedId={props.selectedConnectionId}
+          draft={draft}
+          zoom={camera.zoom}
+          onDelete={props.onDeleteConnection}
+        />
         {props.overlay}
       </div>
 

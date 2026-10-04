@@ -67,6 +67,58 @@ export type Database = {
         }
         Relationships: []
       }
+      connections: {
+        Row: {
+          board_id: string
+          created_at: string
+          created_by: string | null
+          from_note_id: string
+          id: string
+          kind: string
+          to_note_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          created_by?: string | null
+          from_note_id: string
+          id?: string
+          kind?: string
+          to_note_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          created_by?: string | null
+          from_note_id?: string
+          id?: string
+          kind?: string
+          to_note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_from_note_id_fkey"
+            columns: ["from_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_to_note_id_fkey"
+            columns: ["to_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           board_id: string
