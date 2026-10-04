@@ -33,7 +33,13 @@ export async function createClient() {
   );
 }
 
-export type SessionUser = { id: string; email: string | null };
+export type SessionUser = {
+  id: string;
+  email: string | null;
+  /** Display name from the identity provider (e.g. Google), if any. */
+  name: string | null;
+  avatarUrl: string | null;
+};
 
 /** The signed-in user (verified JWT claims), deduplicated per request. */
 export const getUser = cache(async (): Promise<SessionUser | null> => {
@@ -41,5 +47,15 @@ export const getUser = cache(async (): Promise<SessionUser | null> => {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (!claims?.sub) return null;
-  return { id: claims.sub, email: claims.email ?? null };
+
+  const meta = (claims.user_metadata ?? {}) as Record<string, unknown>;
+  const text = (value: unknown) =>
+    typeof value === "string" && value.trim() ? value.trim() : null;
+
+  return {
+    id: claims.sub,
+    email: claims.email ?? null,
+    name: text(meta.full_name) ?? text(meta.name),
+    avatarUrl: text(meta.avatar_url) ?? text(meta.picture),
+  };
 });

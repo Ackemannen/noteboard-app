@@ -1,15 +1,45 @@
 import type { Tables } from "@/lib/supabase/database.types";
 
-export type NoteColor = "yellow" | "pink" | "blue" | "green" | "orange";
+/** Sticky notes are square; this is their size in board (world) units. */
+export const NOTE_SIZE = 192;
+
+export const NOTE_COLORS = {
+  yellow: {
+    label: "Yellow",
+    className: "bg-yellow-200 border-yellow-300",
+    hex: "#fef08a",
+  },
+  pink: { label: "Pink", className: "bg-pink-200 border-pink-300", hex: "#fbcfe8" },
+  blue: { label: "Blue", className: "bg-blue-200 border-blue-300", hex: "#bfdbfe" },
+  green: {
+    label: "Green",
+    className: "bg-green-200 border-green-300",
+    hex: "#bbf7d0",
+  },
+  orange: {
+    label: "Orange",
+    className: "bg-orange-200 border-orange-300",
+    hex: "#fed7aa",
+  },
+} as const;
+
+export type NoteColor = keyof typeof NOTE_COLORS;
+
+export function noteColor(color: string) {
+  return NOTE_COLORS[color as NoteColor] ?? NOTE_COLORS.yellow;
+}
 
 export interface Note {
   id: string;
   title: string;
   content: string;
   color: string;
+  /** Center of the note in world coordinates. */
   x: number;
   y: number;
   rotation: number;
+  /** Stacking order; higher is drawn on top. */
+  z: number;
 }
 
 type NoteRow = Tables<"notes">;
@@ -23,6 +53,7 @@ export function rowToNote(row: NoteRow): Note {
     x: row.x,
     y: row.y,
     rotation: row.rotation,
+    z: row.z,
   };
 }
 
@@ -37,6 +68,15 @@ export function isSameNote(a: Note, b: Note) {
     a.color === b.color &&
     a.x === b.x &&
     a.y === b.y &&
-    a.rotation === b.rotation
+    a.rotation === b.rotation &&
+    a.z === b.z
   );
+}
+
+export function sortByZ(notes: Note[]) {
+  return [...notes].sort((a, b) => a.z - b.z);
+}
+
+export function maxZ(notes: Note[]) {
+  return notes.reduce((max, note) => Math.max(max, note.z), 0);
 }

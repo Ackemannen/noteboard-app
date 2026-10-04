@@ -10,8 +10,14 @@ TypeScript and Tailwind CSS 4.
 
 - 📝 Sticky notes: click anywhere to create, click a note to edit or delete
 - 🎨 Five note colors with a slight random rotation for an organic look
-- 🖱️ Drag & drop, shift-drag lasso selection, and moving groups of notes
-- 🔍 Zoom (wheel / pinch) and pan (middle-click, ctrl-drag, touch)
+- 🖱️ Drag & drop with a shared stacking order (dragged notes come to the front for everyone)
+- ✅ Multi-select with a selection box (Shift + drag or the Select tool) or Shift + click,
+  then move, recolor or delete the whole selection (with undo)
+- 🔍 Infinite canvas: zoom around the pointer (wheel / pinch), pan by dragging the board
+- 🗺️ Minimap showing the whole board and the visible area. Click or drag it to navigate
+- ⌨️ Keyboard shortcuts (the ? button on a board lists them all)
+- 🧭 Hover sidebar with your boards and boards shared with you
+- 🗂️ Dashboard with live board thumbnails, search, filters, sorting and inline rename
 - 🔐 Email/password and Google sign-in
 - 🔗 Share links. Opening a board's link adds you as a collaborator
 - ⚡ Live sync between everyone viewing a board (Supabase Realtime)
@@ -102,7 +108,7 @@ To enable deploys, add these repository secrets (Settings → Secrets and variab
 | --- | --- |
 | `boards` | A board and its owner. Only the owner can rename or delete it |
 | `board_members` | Who can access a board. The owner is added automatically; `join_board()` adds people who open a share link |
-| `notes` | Sticky notes (text, color, position, rotation) belonging to a board |
+| `notes` | Sticky notes (text, color, position, rotation, stacking order `z`) belonging to a board |
 
 Row Level Security is enabled on every table: users only ever see boards they're a member of.
 
@@ -141,13 +147,21 @@ src/
 ├── app/
 │   ├── page.tsx                 # Landing page
 │   ├── auth/                    # Sign-in page, OAuth/email callback, sign-out action
-│   ├── dashboard/               # Board list + server actions (create/delete/leave)
-│   └── boards/[id]/             # Board page (server) + interactive Board (client)
-├── components/                  # CorkBoard, StickyNote, NoteModal, ZoomControls, ...
+│   └── (app)/                   # Signed-in area, wrapped in the sidebar layout
+│       ├── layout.tsx
+│       ├── dashboard/           # Board grid + server actions (create/rename/delete/leave)
+│       └── boards/[id]/         # Board page (server) → Board (client canvas)
+├── components/
+│   ├── board/                   # BoardCanvas, StickyNote, Minimap, NavigatorPanel, toolbars
+│   └── sidebar/Sidebar.tsx      # Collapsible navigation rail
 ├── hooks/
 │   ├── useBoardNotes.ts         # Notes state ⇄ Supabase (debounced saves + realtime)
-│   └── useDrag / useZoom / useSelection / useSelectedNotesMovement
-├── lib/supabase/                # Browser/server clients, proxy helper, generated types
+│   ├── useCamera.ts             # Pan/zoom state, animations, remembered per board
+│   └── useViewportSize.ts
+├── lib/
+│   ├── board-geometry.ts        # Camera math: screen ⇄ world, zoom-at-point, fitting
+│   ├── notes.ts                 # Note model, colors, sizes
+│   └── supabase/                # Browser/server clients, proxy helper, generated types
 └── proxy.ts                     # Refreshes the auth session, guards private routes
 supabase/
 ├── config.toml                  # Local Supabase stack config (incl. Google provider)
