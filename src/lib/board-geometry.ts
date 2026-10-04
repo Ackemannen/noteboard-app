@@ -143,3 +143,43 @@ export const midpoint = (a: Point, b: Point): Point => ({
   x: (a.x + b.x) / 2,
   y: (a.y + b.y) / 2,
 });
+
+/**
+ * The board's fixed size in world units, centered on the origin. 3:2, the
+ * same shape as the minimap, so the map shows the whole board at one scale.
+ * (About 37 × 25 notes.)
+ */
+export const BOARD_RECT: Rect = { minX: -3600, minY: -2400, maxX: 3600, maxY: 2400 };
+
+/** Screen pixels the view may scroll past the board's edge (so edge notes clear the toolbars). */
+const EDGE_OVERSCROLL = 96;
+
+/**
+ * Keep the view on the board: no zooming out past "whole board visible" and
+ * no panning beyond its edges. When the board is smaller than the screen on
+ * an axis, it's centered on that axis.
+ */
+export function clampCamera(camera: Camera, size: Size, board: Rect = BOARD_RECT): Camera {
+  // Zoomed all the way out, the whole board fits with a little room for its frame.
+  const fitZoom = 0.9 * Math.min(size.width / rectWidth(board), size.height / rectHeight(board));
+  const zoom = Math.max(clampZoom(camera.zoom), fitZoom);
+  const axis = (offset: number, screen: number, min: number, max: number) => {
+    const length = (max - min) * zoom;
+    if (length <= screen) return (screen - length) / 2 - min * zoom;
+    return Math.min(-min * zoom + EDGE_OVERSCROLL, Math.max(screen - max * zoom - EDGE_OVERSCROLL, offset));
+  };
+  return {
+    zoom,
+    x: axis(camera.x, size.width, board.minX, board.maxX),
+    y: axis(camera.y, size.height, board.minY, board.maxY),
+  };
+}
+
+/** Keep a note's center far enough inside the board that the whole note stays on it. */
+export function clampToBoard(point: Point, board: Rect = BOARD_RECT): Point {
+  const half = NOTE_SIZE / 2;
+  return {
+    x: Math.min(board.maxX - half, Math.max(board.minX + half, point.x)),
+    y: Math.min(board.maxY - half, Math.max(board.minY + half, point.y)),
+  };
+}

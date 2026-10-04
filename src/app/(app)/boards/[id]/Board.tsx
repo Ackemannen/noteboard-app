@@ -25,6 +25,9 @@ import {
 import { useCamera } from "@/hooks/useCamera";
 import { useViewportSize } from "@/hooks/useViewportSize";
 import {
+  BOARD_RECT,
+  centerOn,
+  clampToBoard,
   fitRect,
   noteRect,
   notesBounds,
@@ -64,7 +67,7 @@ function initialCamera(notes: Note[], viewport: Size, mapOpen: boolean): Camera 
   const bounds = notesBounds(notes);
   return bounds
     ? fitRect(bounds, viewport, { insets: fitInsets(viewport, mapOpen), maxZoom: 1 })
-    : { x: 0, y: 0, zoom: 1 };
+    : centerOn({ x: 0, y: 0 }, 1, viewport); // empty board: start in the middle
 }
 
 const isTyping = (target: EventTarget | null) =>
@@ -160,7 +163,7 @@ export default function Board({
   const sortedNotes = useMemo(() => sortByZ(notes), [notes]);
   const viewport = useViewportSize();
   const [mapOpen, setMapOpen] = useState(() => readMinimapOpen(viewport));
-  const { camera, cameraRef, setCamera, animateCamera } = useCamera(boardId, () =>
+  const { camera, cameraRef, setCamera, animateCamera } = useCamera(boardId, viewport, () =>
     initialCamera(initialNotes, viewport, mapOpen)
   );
 
@@ -279,7 +282,9 @@ export default function Board({
     (ids: string[], dx: number, dy: number) =>
       setNotes((prev) =>
         prev.map((note) =>
-          ids.includes(note.id) ? { ...note, x: note.x + dx, y: note.y + dy } : note
+          ids.includes(note.id)
+            ? { ...note, ...clampToBoard({ x: note.x + dx, y: note.y + dy }) }
+            : note
         )
       ),
     [setNotes]
@@ -296,8 +301,7 @@ export default function Board({
         {
           id: crypto.randomUUID(),
           ...data,
-          x: modal.at.x,
-          y: modal.at.y,
+          ...clampToBoard(modal.at),
           rotation: Math.random() * 10 - 5, // between -5 and 5 degrees
           z: maxZ(prev) + 1,
         },
@@ -518,7 +522,13 @@ export default function Board({
         }}
         onCreateNote={(at) => {
           if (pickingNote) setPickingNote(false);
-          else setModal({ note: null, at });
+          // Clicks on the frame around the cork don't create notes.
+          else if (
+            at.x >= BOARD_RECT.minX && at.x <= BOARD_RECT.maxX &&
+            at.y >= BOARD_RECT.minY && at.y <= BOARD_RECT.maxY
+          ) {
+            setModal({ note: null, at });
+          }
         }}
         highlightedNoteId={highlightedNoteId}
         onPointerWorldMove={sendCursor}

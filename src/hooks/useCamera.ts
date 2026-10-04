@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   MAX_ZOOM,
   MIN_ZOOM,
   centerOn,
+  clampCamera,
   screenToWorld,
   type Camera,
   type Size,
@@ -34,19 +35,25 @@ function readStoredCamera(key: string): Camera | null {
 /**
  * Camera (pan + zoom) for a board. Remembered per board in this browser.
  * `cameraRef` always holds the latest value, for use inside event handlers.
+ * The view is always kept on the board (see clampCamera).
  * Must run client-side only (reads localStorage during initialization).
  */
-export function useCamera(boardId: string, getInitial: () => Camera) {
+export function useCamera(boardId: string, viewport: Size, getInitial: () => Camera) {
   const storageKey = `collaboard:camera:${boardId}`;
-  const [camera, setCameraState] = useState<Camera>(
-    () => readStoredCamera(storageKey) ?? getInitial()
+  const [camera, setCameraState] = useState<Camera>(() =>
+    clampCamera(readStoredCamera(storageKey) ?? getInitial(), viewport)
   );
   const cameraRef = useRef(camera);
+  const viewportRef = useRef(viewport);
+  useLayoutEffect(() => {
+    viewportRef.current = viewport;
+  });
   const animationFrame = useRef<number | null>(null);
 
   const apply = useCallback((next: Camera) => {
-    cameraRef.current = next;
-    setCameraState(next);
+    const clamped = clampCamera(next, viewportRef.current);
+    cameraRef.current = clamped;
+    setCameraState(clamped);
   }, []);
 
   const stopAnimation = useCallback(() => {
@@ -73,7 +80,7 @@ export function useCamera(boardId: string, getInitial: () => Camera) {
     (update: CameraUpdate, viewport: Size, duration = 240) => {
       stopAnimation();
       const from = cameraRef.current;
-      const to = typeof update === "function" ? update(from) : update;
+      const to = clampCamera(typeof update === "function" ? update(from) : update, viewport);
       const screenCenter = { x: viewport.width / 2, y: viewport.height / 2 };
       const fromCenter = screenToWorld(screenCenter, from);
       const toCenter = screenToWorld(screenCenter, to);

@@ -9,8 +9,9 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { cn } from "@/lib/utils";
-import type { Note } from "@/lib/notes";
+import { NOTE_SIZE, type Note } from "@/lib/notes";
 import {
+  BOARD_RECT,
   distance,
   midpoint,
   noteRect,
@@ -33,8 +34,29 @@ export type CanvasMode = "pan" | "select" | ConnectionKind;
 const isConnectMode = (mode: CanvasMode): mode is ConnectionKind =>
   mode === "thread" || mode === "arrow";
 
-/** World size of one cork texture tile (the image is 1024×680). */
-const TILE = { width: 1024, height: 680 };
+/** The cork board itself: a fixed-size, framed rectangle in world space. */
+function CorkBoardSurface() {
+  return (
+    <div
+      className="pointer-events-none absolute rounded-[20px] bg-[#c08a4f]"
+      style={{
+        left: BOARD_RECT.minX,
+        top: BOARD_RECT.minY,
+        width: BOARD_RECT.maxX - BOARD_RECT.minX,
+        height: BOARD_RECT.maxY - BOARD_RECT.minY,
+        backgroundImage: "url(/cork.webp)",
+        // World units (the image is 1024×680); 1.5× hides the tile repeat when zoomed out.
+        backgroundSize: "1536px 1020px",
+        // Wooden frame (spread shadows scale with the board) plus depth.
+        boxShadow:
+          "inset 0 8px 24px rgba(40,20,0,0.35), 0 0 0 26px #7a4b28, 0 0 0 30px #4e2f17, 0 50px 140px 30px rgba(0,0,0,0.55)",
+      }}
+    >
+      {/* Dark mode dims the cork (not the notes, which are drawn above it) */}
+      <div className="absolute inset-0 hidden rounded-[inherit] bg-stone-950/50 dark:block" />
+    </div>
+  );
+}
 
 type Gesture =
   | { kind: "none" }
@@ -316,8 +338,15 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       }
       case "drag": {
         const world = screenToWorld(point, cameraRef.current);
-        const dx = world.x - g.startWorld.x;
-        const dy = world.y - g.startWorld.y;
+        // Clamp the shared offset (not each note) so a dragged group keeps its
+        // shape and every note stays on the board.
+        const half = NOTE_SIZE / 2;
+        let dx = world.x - g.startWorld.x;
+        let dy = world.y - g.startWorld.y;
+        g.origins.forEach((origin) => {
+          dx = Math.min(BOARD_RECT.maxX - half - origin.x, Math.max(BOARD_RECT.minX + half - origin.x, dx));
+          dy = Math.min(BOARD_RECT.maxY - half - origin.y, Math.max(BOARD_RECT.minY + half - origin.y, dy));
+        });
         const positions = new Map<string, Point>();
         g.origins.forEach((origin, id) =>
           positions.set(id, { x: origin.x + dx, y: origin.y + dy })
@@ -447,7 +476,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
     <div
       ref={viewportRef}
       className={cn(
-        "fixed inset-0 touch-none select-none overflow-hidden bg-[#c08a4f] outline-none",
+        "fixed inset-0 touch-none select-none overflow-hidden bg-[#2a1d14] outline-none dark:bg-[#140e0a]",
         isGrabbing
           ? "cursor-grabbing [&_*]:cursor-grabbing"
           : isSpaceHeld || mode === "pan"
@@ -456,11 +485,6 @@ export default function BoardCanvas(props: BoardCanvasProps) {
         isConnectMode(mode) && !isGrabbing && "[&_.sticky-note]:!cursor-crosshair",
         !isGrabbing && !isSpaceHeld && "[&_.sticky-note]:cursor-pointer"
       )}
-      style={{
-        backgroundImage: "url(/cork.webp)",
-        backgroundSize: `${TILE.width * camera.zoom}px ${TILE.height * camera.zoom}px`,
-        backgroundPosition: `${camera.x}px ${camera.y}px`,
-      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={(e) => finishPointer(e, false)}
@@ -468,11 +492,6 @@ export default function BoardCanvas(props: BoardCanvasProps) {
       onPointerLeave={() => latest.current.onPointerWorldMove?.(null)}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Dark mode dims the cork (not the notes, which sit above this layer) */}
-      <div className="pointer-events-none absolute inset-0 hidden bg-stone-950/50 dark:block" />
-      {/* Soft vignette for depth */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(60,30,0,0.25))]" />
-
       {/* World layer */}
       <div
         className="absolute left-0 top-0 origin-top-left will-change-transform"
@@ -480,6 +499,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
           transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
         }}
       >
+        <CorkBoardSurface />
         {notes.map((note) => (
           <StickyNote
             key={note.id}
